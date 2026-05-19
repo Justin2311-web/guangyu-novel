@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { getCurrentUser } from '@/lib/supabase/server';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
   description: '光羽小说 — 阅读优质中文小说的开放平台。',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getCurrentUser();
+
   return (
     <html lang="zh-CN">
       <body>
@@ -19,11 +22,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="text-xl font-semibold text-brand">
               光羽小说
             </Link>
-            <nav className="flex gap-6 text-sm text-stone-600">
+            <nav className="flex items-center gap-6 text-sm text-stone-600">
               <Link href="/" className="hover:text-brand">首页</Link>
               <Link href="/novels" className="hover:text-brand">小说</Link>
               <Link href="/categories" className="hover:text-brand">分类</Link>
-              <Link href="/login" className="hover:text-brand">登录</Link>
+              {session ? (
+                <>
+                  <span className="text-stone-500">
+                    {session.profile?.display_name ?? session.user.email}
+                  </span>
+                  <form action="/logout" method="post">
+                    <button className="hover:text-brand" type="submit">登出</button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className="hover:text-brand">登录</Link>
+                  <Link href="/register" className="hover:text-brand">注册</Link>
+                </>
+              )}
             </nav>
           </div>
         </header>
