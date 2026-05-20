@@ -2,13 +2,25 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import type { Role } from '@guangyu/database';
 
-const SUPERADMIN_ONLY_PREFIXES = ['/users', '/settings'];
 const PUBLIC_PATHS = new Set(['/login', '/auth/callback']);
 
-function isSuperadminOnly(pathname: string): boolean {
-  return SUPERADMIN_ONLY_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+// Which roles may access each gated section. Longest-prefix match wins.
+// Paths not listed here (e.g. '/' overview) are open to any non-reader role.
+const SECTION_ACCESS: { prefix: string; roles: Role[] }[] = [
+  { prefix: '/users', roles: ['superadmin'] },
+  { prefix: '/settings', roles: ['superadmin'] },
+  { prefix: '/authors', roles: ['superadmin', 'admin'] },
+  { prefix: '/categories', roles: ['superadmin', 'admin'] },
+  { prefix: '/banners', roles: ['superadmin', 'admin'] },
+  { prefix: '/novels', roles: ['superadmin', 'admin', 'author'] },
+  { prefix: '/chapters', roles: ['superadmin', 'admin', 'author'] },
+];
+
+function allowedRolesFor(pathname: string): Role[] | null {
+  const match = SECTION_ACCESS.find(
+    (s) => pathname === s.prefix || pathname.startsWith(`${s.prefix}/`),
   );
+  return match ? match.roles : null;
 }
 
 export async function updateAdminSession(request: NextRequest) {
@@ -60,23 +72,16 @@ export async function updateAdminSession(request: NextRequest) {
 
   // Readers may not enter the admin app at all.
   if (role === 'reader') {
+    if (pathname === '/login') return response; // already at destination — don't loop
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('error', 'forbidden');
     return NextResponse.redirect(url);
   }
 
-  // Authors are allowed into the admin app (their dashboard lives here),
-  // but not into superadmin-only sections.
-  if (role === 'author' && isSuperadminOnly(pathname)) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
-    url.searchParams.set('error', 'forbidden');
-    return NextResponse.redirect(url);
-  }
-
-  // Admins (non-superadmin) cannot enter superadmin-only sections.
-  if (role === 'admin' && isSuperadminOnly(pathname)) {
+  // Section-level authorization for admin/author (superadmin passes everything).
+  const allowed = allowedRolesFor(pathname);
+  if (allowed && !allowed.includes(role)) {
     const url = request.nextUrl.clone();
     url.pathname = '/';
     url.searchParams.set('error', 'forbidden');
