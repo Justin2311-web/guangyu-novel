@@ -3,12 +3,31 @@
 
 export type Role = 'superadmin' | 'admin' | 'author' | 'reader';
 
-export type NovelStatus =
+// Review workflow status (kept for Phase 4 author submission flow).
+export type NovelReviewStatus =
   | 'draft'
   | 'pending_review'
   | 'published'
   | 'rejected'
   | 'archived';
+
+// Backwards-compatible alias.
+export type NovelStatus = NovelReviewStatus;
+
+// Serialization status (Phase 3b).
+export type NovelSerialStatus = 'ongoing' | 'completed' | 'hiatus';
+
+export const NOVEL_SERIAL_STATUSES: readonly NovelSerialStatus[] = [
+  'ongoing',
+  'completed',
+  'hiatus',
+] as const;
+
+export const NOVEL_SERIAL_STATUS_LABELS: Record<NovelSerialStatus, string> = {
+  ongoing: '连载中',
+  completed: '已完结',
+  hiatus: '暂停',
+};
 
 export type ChapterStatus =
   | 'draft'
@@ -74,8 +93,10 @@ export interface Novel {
   slug: string;
   title: string;
   description: string | null;
-  cover_url: string | null;
-  status: NovelStatus;
+  cover_image_url: string | null;
+  status: NovelSerialStatus;
+  is_published: boolean;
+  review_status: NovelReviewStatus;
   featured: boolean;
   view_count: number;
   created_at: string;

@@ -72,14 +72,14 @@ begin
   -- 5. Demo novel.
   insert into public.novels (
     author_id, category_id, slug, title, description,
-    cover_url, status, featured, published_at
+    cover_image_url, status, is_published, review_status, featured, published_at
   ) values (
     v_author_id, v_category_id,
     'yulinjian-ji',
     '《羽林剑记》',
     '少年沈青松机缘巧合得到一柄上古羽林剑，自此踏上问鼎仙途的修行之路。',
     null,
-    'published', true, now()
+    'ongoing', true, 'published', true, now()
   )
   on conflict (slug) do nothing
   returning id into v_novel_id;

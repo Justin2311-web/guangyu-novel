@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { getCategories } from '@/lib/queries';
+import { getCategories, getLatestNovels } from '@/lib/queries';
+import { NovelCard } from './novels/NovelCard';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const categories = await getCategories();
+  const [categories, latest] = await Promise.all([getCategories(), getLatestNovels(6)]);
 
   return (
     <section className="space-y-8">
@@ -39,13 +40,22 @@ export default async function HomePage() {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {['推荐作品', '最新更新', '热门小说'].map((title) => (
-          <div key={title} className="rounded-xl border border-stone-200 bg-white p-6">
-            <h2 className="text-lg font-medium">{title}</h2>
-            <p className="mt-2 text-sm text-stone-500">数据将在后续阶段接入。</p>
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-xl font-semibold">最新作品</h2>
+          <Link href="/novels" className="text-sm text-brand hover:underline">
+            进入书库
+          </Link>
+        </div>
+        {latest.length === 0 ? (
+          <p className="text-sm text-stone-500">暂无已发布的小说。</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {latest.map((n) => (
+              <NovelCard key={n.id} novel={n} />
+            ))}
           </div>
-        ))}
+        )}
       </div>
     </section>
   );
