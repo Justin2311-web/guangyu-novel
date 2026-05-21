@@ -3,8 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient, getCurrentAdminUser } from '@/lib/supabase/server';
 import { isSuperadmin, ROLES, type Role } from '@guangyu/database';
-
-export type UserActionResult = { ok: boolean; error?: string };
+import type { UserActionResult } from './types';
 
 async function requireSuperadmin() {
   const session = await getCurrentAdminUser();
