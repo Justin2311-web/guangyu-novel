@@ -125,6 +125,7 @@ To be configured in Phase 10. Plan: create **two** Vercel projects, both pointin
   - [x] 3b — Novels CMS
   - [x] 3c — Chapters CMS
   - [x] 3d — Banners CMS + homepage integration
+  - [x] 3e — Users management CMS (superadmin)
 - [ ] Phase 4 — Author dashboard
 - [ ] Phase 5 — Reader frontend
 - [ ] Phase 6 — Site settings CMS
