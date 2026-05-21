@@ -1,5 +1,21 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type { Banner, Category, NovelSerialStatus } from '@guangyu/database';
+import {
+  parseSiteSettings,
+  type Banner,
+  type Category,
+  type NovelSerialStatus,
+  type SiteSettings,
+} from '@guangyu/database';
+
+/**
+ * Site settings, read fresh on every request (the cookie-based Supabase client
+ * makes callers dynamic), so admin changes appear without a rebuild/redeploy.
+ */
+export async function getSiteSettings(): Promise<SiteSettings> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from('site_settings').select('key, value');
+  return parseSiteSettings(data);
+}
 
 export type HomeBanner = Pick<
   Banner,

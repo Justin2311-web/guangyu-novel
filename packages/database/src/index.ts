@@ -177,3 +177,80 @@ export function canManageContent(role: Role | null | undefined): boolean {
 export function isSuperadmin(role: Role | null | undefined): boolean {
   return role === 'superadmin';
 }
+
+// =====================================================================
+// Site settings — canonical key/value config edited from the admin CMS
+// and consumed by the reader site. Stored in public.site_settings as
+// jsonb string values, keyed by these dotted keys.
+// =====================================================================
+export const SITE_SETTING_KEYS = [
+  // General
+  'site.name',
+  'site.description',
+  'site.logo_url',
+  'site.favicon_url',
+  // Homepage
+  'home.hero_title',
+  'home.hero_subtitle',
+  'home.hero_cta_text',
+  'home.hero_cta_link',
+  // SEO
+  'seo.meta_title',
+  'seo.meta_description',
+  'seo.meta_keywords',
+  // Social media
+  'social.facebook',
+  'social.instagram',
+  'social.tiktok',
+  'social.youtube',
+  'social.discord',
+  // Contact
+  'contact.email',
+  'contact.phone',
+  'contact.address',
+  // Footer
+  'footer.about',
+  'footer.copyright',
+] as const;
+
+export type SiteSettingKey = (typeof SITE_SETTING_KEYS)[number];
+
+export type SiteSettings = Record<SiteSettingKey, string>;
+
+export const SITE_SETTINGS_DEFAULTS: SiteSettings = {
+  'site.name': '光羽小说',
+  'site.description': '光羽小说 — 阅读优质中文小说的开放平台。',
+  'site.logo_url': '',
+  'site.favicon_url': '',
+  'home.hero_title': '欢迎来到 光羽小说',
+  'home.hero_subtitle': '阅读优质中文小说。后续阶段将接入推荐、最新更新与作者后台等功能。',
+  'home.hero_cta_text': '进入书库',
+  'home.hero_cta_link': '/novels',
+  'seo.meta_title': '光羽小说',
+  'seo.meta_description': '光羽小说 — 阅读优质中文小说的开放平台。',
+  'seo.meta_keywords': '小说,中文小说,在线阅读',
+  'social.facebook': '',
+  'social.instagram': '',
+  'social.tiktok': '',
+  'social.youtube': '',
+  'social.discord': '',
+  'contact.email': '',
+  'contact.phone': '',
+  'contact.address': '',
+  'footer.about': '',
+  'footer.copyright': '© 光羽小说. All rights reserved.',
+};
+
+/** Merge raw site_settings rows over the defaults, ignoring unknown keys. */
+export function parseSiteSettings(
+  rows: { key: string; value: unknown }[] | null | undefined,
+): SiteSettings {
+  const out: SiteSettings = { ...SITE_SETTINGS_DEFAULTS };
+  for (const row of rows ?? []) {
+    if ((SITE_SETTING_KEYS as readonly string[]).includes(row.key)) {
+      const v = row.value;
+      out[row.key as SiteSettingKey] = typeof v === 'string' ? v : v == null ? '' : String(v);
+    }
+  }
+  return out;
+}
