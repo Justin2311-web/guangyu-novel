@@ -59,12 +59,52 @@ export async function getNovels(categorySlug?: string): Promise<NovelListItem[]>
 
 export type NovelDetail = NovelListItem & { description: string | null };
 
+/** Route params for non-ASCII slugs arrive percent-encoded; decode before matching. */
+function decodeSlug(slug: string): string {
+  try {
+    return decodeURIComponent(slug);
+  } catch {
+    return slug;
+  }
+}
+
 export async function getNovelBySlug(slug: string): Promise<NovelDetail | null> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('novels')
     .select(NOVEL_LIST_SELECT)
-    .eq('slug', slug)
+    .eq('slug', decodeSlug(slug))
     .maybeSingle();
   return (data as unknown as NovelDetail) ?? null;
+}
+
+export type ChapterListItem = { id: string; chapter_number: number; title: string };
+
+/** Published chapters of a novel, ascending. RLS also gates on the parent novel being published. */
+export async function getPublishedChapters(novelId: string): Promise<ChapterListItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('chapters')
+    .select('id, chapter_number, title')
+    .eq('novel_id', novelId)
+    .eq('status', 'published')
+    .order('chapter_number', { ascending: true });
+  return (data ?? []) as ChapterListItem[];
+}
+
+export type ChapterContent = ChapterListItem & { content: string };
+
+export async function getChapterContent(
+  novelId: string,
+  chapterNumber: number,
+): Promise<ChapterContent | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('chapters')
+    .select('id, chapter_number, title, content')
+    .eq('novel_id', novelId)
+    .eq('chapter_number', chapterNumber)
+    .eq('status', 'published')
+    .maybeSingle();
+  return (data as ChapterContent) ?? null;
 }

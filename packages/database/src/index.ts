@@ -59,6 +59,14 @@ export const CHAPTER_STATUSES: readonly ChapterStatus[] = [
   'archived',
 ] as const;
 
+export const CHAPTER_STATUS_LABELS: Record<ChapterStatus, string> = {
+  draft: '草稿',
+  pending_review: '待审核',
+  published: '已发布',
+  rejected: '已退回',
+  archived: '已归档',
+};
+
 export interface Profile {
   id: string;
   role: Role;

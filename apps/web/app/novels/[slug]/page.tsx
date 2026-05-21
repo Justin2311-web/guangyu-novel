@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { NOVEL_SERIAL_STATUS_LABELS } from '@guangyu/database';
-import { getNovelBySlug } from '@/lib/queries';
+import { getNovelBySlug, getPublishedChapters } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +28,9 @@ export default async function NovelDetailPage({
   const { slug } = await params;
   const novel = await getNovelBySlug(slug);
   if (!novel) notFound();
+
+  const chapters = await getPublishedChapters(novel.id);
+  const firstChapter = chapters[0];
 
   return (
     <article className="space-y-8">
@@ -74,14 +77,22 @@ export default async function NovelDetailPage({
             </div>
           </dl>
           <div className="pt-2">
-            <button
-              type="button"
-              disabled
-              className="cursor-not-allowed rounded-md bg-stone-200 px-4 py-2 text-sm text-stone-500"
-              title="章节将在后续阶段开放"
-            >
-              开始阅读（即将开放）
-            </button>
+            {firstChapter ? (
+              <Link
+                href={`/novels/${novel.slug}/${firstChapter.chapter_number}`}
+                className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+              >
+                开始阅读
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="cursor-not-allowed rounded-md bg-stone-200 px-4 py-2 text-sm text-stone-500"
+              >
+                暂无章节
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -95,7 +106,23 @@ export default async function NovelDetailPage({
 
       <section>
         <h2 className="mb-2 text-lg font-medium">目录</h2>
-        <p className="text-sm text-stone-500">章节列表将在 Phase 3c 开放。</p>
+        {chapters.length === 0 ? (
+          <p className="text-sm text-stone-500">暂无章节。</p>
+        ) : (
+          <ul className="divide-y divide-stone-100 rounded-lg border border-stone-200">
+            {chapters.map((c) => (
+              <li key={c.id}>
+                <Link
+                  href={`/novels/${novel.slug}/${c.chapter_number}`}
+                  className="flex items-baseline gap-3 px-4 py-3 text-sm hover:bg-stone-50"
+                >
+                  <span className="text-stone-400">第 {c.chapter_number} 章</span>
+                  <span className="text-stone-800">{c.title}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </article>
   );
