@@ -43,6 +43,13 @@ export const ROLES: readonly Role[] = [
   'reader',
 ] as const;
 
+export const USER_ROLE_LABELS: Record<Role, string> = {
+  superadmin: '超级管理员',
+  admin: '管理员',
+  author: '作者',
+  reader: '读者',
+};
+
 export const NOVEL_STATUSES: readonly NovelStatus[] = [
   'draft',
   'pending_review',
@@ -72,6 +79,7 @@ export interface Profile {
   role: Role;
   display_name: string | null;
   avatar_url: string | null;
+  suspended: boolean;
   created_at: string;
   updated_at: string;
 }
