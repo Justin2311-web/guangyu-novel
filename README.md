@@ -121,6 +121,9 @@ To be configured in Phase 10. Plan: create **two** Vercel projects, both pointin
 - [x] **Phase 1** — Supabase schema, RLS, seeds
 - [x] **Phase 2** — Auth & role-based routing
 - [ ] Phase 3 — Superadmin CMS
+  - [x] 3a — Categories CMS
+  - [x] 3b — Novels CMS
+  - [x] 3c — Chapters CMS
 - [ ] Phase 4 — Author dashboard
 - [ ] Phase 5 — Reader frontend
 - [ ] Phase 6 — Site settings CMS
