@@ -1,20 +1,29 @@
 import Link from 'next/link';
-import { getCategories, getLatestNovels } from '@/lib/queries';
+import { getActiveBanners, getCategories, getLatestNovels } from '@/lib/queries';
 import { NovelCard } from './novels/NovelCard';
+import { HomeBanners } from './HomeBanners';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [categories, latest] = await Promise.all([getCategories(), getLatestNovels(6)]);
+  const [banners, categories, latest] = await Promise.all([
+    getActiveBanners(),
+    getCategories(),
+    getLatestNovels(6),
+  ]);
 
   return (
     <section className="space-y-8">
-      <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-10 text-white shadow-sm">
-        <h1 className="text-3xl font-semibold">欢迎来到 光羽小说</h1>
-        <p className="mt-3 max-w-xl text-white/90">
-          阅读优质中文小说。后续阶段将接入推荐、最新更新与作者后台等功能。
-        </p>
-      </div>
+      {banners.length > 0 ? (
+        <HomeBanners banners={banners} />
+      ) : (
+        <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-10 text-white shadow-sm">
+          <h1 className="text-3xl font-semibold">欢迎来到 光羽小说</h1>
+          <p className="mt-3 max-w-xl text-white/90">
+            阅读优质中文小说。后续阶段将接入推荐、最新更新与作者后台等功能。
+          </p>
+        </div>
+      )}
 
       <div>
         <div className="mb-3 flex items-center justify-between">

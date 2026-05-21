@@ -1,5 +1,22 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type { Category, NovelSerialStatus } from '@guangyu/database';
+import type { Banner, Category, NovelSerialStatus } from '@guangyu/database';
+
+export type HomeBanner = Pick<
+  Banner,
+  'id' | 'title' | 'image_url' | 'mobile_image_url' | 'link_url' | 'button_label'
+>;
+
+/** Active banners, ascending by sort_order. RLS already restricts to active = true. */
+export async function getActiveBanners(): Promise<HomeBanner[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('banners')
+    .select('id, title, image_url, mobile_image_url, link_url, button_label')
+    .eq('active', true)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+  return (data ?? []) as HomeBanner[];
+}
 
 export async function getCategories(): Promise<Category[]> {
   const supabase = await createSupabaseServerClient();

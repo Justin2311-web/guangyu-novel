@@ -128,6 +128,7 @@ export interface Banner {
   id: string;
   title: string | null;
   image_url: string;
+  mobile_image_url: string | null;
   link_url: string | null;
   button_label: string | null;
   sort_order: number;
