@@ -1,15 +1,16 @@
 import Link from 'next/link';
-import { getActiveBanners, getCategories, getLatestNovels } from '@/lib/queries';
+import { getActiveBanners, getCategories, getLatestNovels, getSiteSettings } from '@/lib/queries';
 import { NovelCard } from './novels/NovelCard';
 import { HomeBanners } from './HomeBanners';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [banners, categories, latest] = await Promise.all([
+  const [banners, categories, latest, settings] = await Promise.all([
     getActiveBanners(),
     getCategories(),
     getLatestNovels(6),
+    getSiteSettings(),
   ]);
 
   return (
@@ -18,10 +19,18 @@ export default async function HomePage() {
         <HomeBanners banners={banners} />
       ) : (
         <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-10 text-white shadow-sm">
-          <h1 className="text-3xl font-semibold">欢迎来到 光羽小说</h1>
-          <p className="mt-3 max-w-xl text-white/90">
-            阅读优质中文小说。后续阶段将接入推荐、最新更新与作者后台等功能。
-          </p>
+          <h1 className="text-3xl font-semibold">{settings['home.hero_title']}</h1>
+          {settings['home.hero_subtitle'] && (
+            <p className="mt-3 max-w-xl text-white/90">{settings['home.hero_subtitle']}</p>
+          )}
+          {settings['home.hero_cta_text'] && settings['home.hero_cta_link'] && (
+            <Link
+              href={settings['home.hero_cta_link']}
+              className="mt-5 inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-brand hover:bg-white/90"
+            >
+              {settings['home.hero_cta_text']}
+            </Link>
+          )}
         </div>
       )}
 
