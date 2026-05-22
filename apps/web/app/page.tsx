@@ -43,6 +43,21 @@ export default async function HomePage() {
         </div>
       )}
 
+      <form method="get" action="/novels" className="flex gap-2">
+        <input
+          type="text"
+          name="q"
+          placeholder="搜索书名、作者、分类…"
+          className="flex-1 rounded-md border border-stone-300 px-4 py-2 text-sm focus:border-brand focus:outline-none"
+        />
+        <button
+          type="submit"
+          className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+        >
+          搜索
+        </button>
+      </form>
+
       {session && (
         <div>
           <h2 className="mb-3 text-xl font-semibold">继续阅读</h2>

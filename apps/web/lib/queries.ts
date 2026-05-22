@@ -52,12 +52,13 @@ export type NovelListItem = {
   cover_image_url: string | null;
   status: NovelSerialStatus;
   created_at: string;
+  updated_at: string;
   authors: { pen_name: string } | null;
   categories: { name: string; slug: string } | null;
 };
 
 const NOVEL_LIST_SELECT =
-  'id, slug, title, description, cover_image_url, status, created_at, authors(pen_name), categories(name, slug)';
+  'id, slug, title, description, cover_image_url, status, created_at, updated_at, authors(pen_name), categories(name, slug)';
 
 /** Latest published novels (RLS only returns is_published = true). */
 export async function getLatestNovels(limit = 8): Promise<NovelListItem[]> {
@@ -70,23 +71,53 @@ export async function getLatestNovels(limit = 8): Promise<NovelListItem[]> {
   return (data ?? []) as unknown as NovelListItem[];
 }
 
-/** All published novels, optionally filtered by category slug. */
-export async function getNovels(categorySlug?: string): Promise<NovelListItem[]> {
-  const supabase = await createSupabaseServerClient();
-  let query = supabase
-    .from('novels')
-    .select(NOVEL_LIST_SELECT)
-    .order('created_at', { ascending: false });
+export type NovelSort = 'updated' | 'created' | 'title';
 
+export type NovelQueryOptions = {
+  q?: string;
+  categorySlug?: string;
+  status?: NovelSerialStatus;
+  sort?: NovelSort;
+};
+
+/**
+ * Published novels (RLS gates to is_published) with optional search, category
+ * + status filters, and sorting. The free-text query matches title,
+ * description, author pen name, or category name (matched in-memory so it can
+ * span the joined author/category relations).
+ */
+export async function getNovels(options: NovelQueryOptions = {}): Promise<NovelListItem[]> {
+  const { q, categorySlug, status, sort = 'updated' } = options;
+  const supabase = await createSupabaseServerClient();
+
+  let query = supabase.from('novels').select(NOVEL_LIST_SELECT);
+
+  if (status) query = query.eq('status', status);
   if (categorySlug) {
-    // filter via the joined category slug
     query = query.eq('categories.slug', categorySlug).not('category_id', 'is', null);
   }
 
+  if (sort === 'title') query = query.order('title', { ascending: true });
+  else if (sort === 'created') query = query.order('created_at', { ascending: false });
+  else query = query.order('updated_at', { ascending: false });
+
   const { data } = await query;
   let rows = (data ?? []) as unknown as NovelListItem[];
-  // The embedded filter only nulls the relation; keep rows whose category matched.
+
+  // The embedded category filter only nulls the relation; keep matched rows.
   if (categorySlug) rows = rows.filter((r) => r.categories?.slug === categorySlug);
+
+  const needle = q?.trim().toLowerCase();
+  if (needle) {
+    rows = rows.filter(
+      (r) =>
+        r.title.toLowerCase().includes(needle) ||
+        (r.description ?? '').toLowerCase().includes(needle) ||
+        (r.authors?.pen_name ?? '').toLowerCase().includes(needle) ||
+        (r.categories?.name ?? '').toLowerCase().includes(needle),
+    );
+  }
+
   return rows;
 }
 
