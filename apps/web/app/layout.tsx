@@ -51,6 +51,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/categories" className="hover:text-brand">分类</Link>
               {session ? (
                 <>
+                  {['author', 'admin', 'superadmin'].includes(session.profile?.role ?? '') && (
+                    <Link href="/author/dashboard" className="hover:text-brand">作者中心</Link>
+                  )}
                   <Link href="/bookshelf" className="hover:text-brand">我的书架</Link>
                   <Link href="/account" className="hover:text-brand">我的账户</Link>
                   <span className="text-stone-500">
