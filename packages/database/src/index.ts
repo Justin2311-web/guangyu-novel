@@ -92,6 +92,46 @@ export interface Author {
   profile_id: string;
   pen_name: string;
   bio: string | null;
+  status: 'active' | 'suspended';
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AuthorApplicationStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'revision_requested';
+
+export const AUTHOR_APPLICATION_STATUSES: readonly AuthorApplicationStatus[] = [
+  'pending',
+  'approved',
+  'rejected',
+  'revision_requested',
+] as const;
+
+export const AUTHOR_APPLICATION_STATUS_LABELS: Record<AuthorApplicationStatus, string> = {
+  pending: '待审核',
+  approved: '已通过',
+  rejected: '已拒绝',
+  revision_requested: '需修改',
+};
+
+export interface AuthorApplication {
+  id: string;
+  user_id: string;
+  pen_name: string;
+  bio: string | null;
+  genre: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  social_link: string | null;
+  sample_text: string | null;
+  status: AuthorApplicationStatus;
+  admin_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -132,6 +132,7 @@ To be configured in Phase 10. Plan: create **two** Vercel projects, both pointin
   - [x] 4b — Search & library filtering
   - [x] 4c — Reader bookshelf & reading progress
   - [x] 4d — Admin user soft-delete + management hardening
+  - [x] 4e — Author application workflow (apply → admin review → role promotion)
 - [ ] Phase 5 — Reader frontend
 - [ ] Phase 6 — Site settings CMS
 - [ ] Phase 7 — Reader accounts (bookmarks, history)

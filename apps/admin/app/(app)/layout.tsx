@@ -8,7 +8,7 @@ const NAV: NavItem[] = [
   { href: '/', label: '概览', roles: ['superadmin', 'admin', 'author'] },
   { href: '/novels', label: '小说', roles: ['superadmin', 'admin', 'author'] },
   { href: '/chapters', label: '章节', roles: ['superadmin', 'admin', 'author'] },
-  { href: '/authors', label: '作者', roles: ['superadmin', 'admin'] },
+  { href: '/authors', label: '作者申请', roles: ['superadmin', 'admin'] },
   { href: '/categories', label: '分类', roles: ['superadmin', 'admin'] },
   { href: '/banners', label: '横幅', roles: ['superadmin', 'admin'] },
   { href: '/users', label: '用户', roles: ['superadmin'] },
