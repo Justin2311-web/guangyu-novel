@@ -51,7 +51,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/categories" className="hover:text-brand">分类</Link>
               {session ? (
                 <>
-                  <Link href="/bookmarks" className="hover:text-brand">我的收藏</Link>
+                  <Link href="/bookshelf" className="hover:text-brand">我的书架</Link>
                   <span className="text-stone-500">
                     {session.profile?.display_name ?? session.user.email}
                   </span>
