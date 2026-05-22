@@ -288,3 +288,171 @@ export async function getBookmarks(): Promise<BookmarkItem[]> {
     continueChapterNumber: continueByNovel.get(r.novels!.id) ?? null,
   }));
 }
+
+// =====================================================================
+// Phase 4c — bookshelf + reading progress
+// =====================================================================
+
+export type ReadingProgress = {
+  chapterNumber: number;
+  chapterTitle: string | null;
+  total: number;
+  percent: number; // 0–100, position of the read chapter within published chapters
+};
+
+export type ShelfItem = {
+  novelSlug: string;
+  novelTitle: string;
+  coverImageUrl: string | null;
+  authorName: string | null;
+  categoryName: string | null;
+  lastReadAt: string | null;
+  progress: ReadingProgress | null;
+};
+
+/** Map of novelId -> ascending published chapter numbers (RLS: published only). */
+async function publishedChapterNumbers(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  novelIds: string[],
+): Promise<Map<string, number[]>> {
+  const map = new Map<string, number[]>();
+  if (novelIds.length === 0) return map;
+  const { data } = await supabase
+    .from('chapters')
+    .select('novel_id, chapter_number')
+    .in('novel_id', novelIds)
+    .eq('status', 'published')
+    .order('chapter_number', { ascending: true });
+  for (const row of (data ?? []) as { novel_id: string; chapter_number: number }[]) {
+    const arr = map.get(row.novel_id) ?? [];
+    arr.push(row.chapter_number);
+    map.set(row.novel_id, arr);
+  }
+  return map;
+}
+
+function computeProgress(
+  chapterNumber: number | null,
+  chapterTitle: string | null,
+  chapterNumbers: number[] | undefined,
+): ReadingProgress | null {
+  if (chapterNumber == null || !chapterNumbers || chapterNumbers.length === 0) return null;
+  const position = chapterNumbers.filter((n) => n <= chapterNumber).length;
+  return {
+    chapterNumber,
+    chapterTitle,
+    total: chapterNumbers.length,
+    percent: Math.round((position / chapterNumbers.length) * 100),
+  };
+}
+
+/** Reading progress for a single novel (used on the novel detail page). */
+export async function getReadingProgressForNovel(novelId: string): Promise<ReadingProgress | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('reading_history')
+    .select('chapters(chapter_number, title)')
+    .eq('novel_id', novelId)
+    .maybeSingle();
+  const ch = (data as { chapters: { chapter_number: number; title: string } | null } | null)
+    ?.chapters;
+  if (!ch) return null;
+  const nums = (await publishedChapterNumbers(supabase, [novelId])).get(novelId);
+  return computeProgress(ch.chapter_number, ch.title, nums);
+}
+
+/** The current user's reading history (newest first) with progress per novel. */
+export async function getReadingList(limit?: number): Promise<ShelfItem[]> {
+  const supabase = await createSupabaseServerClient();
+  let query = supabase
+    .from('reading_history')
+    .select(
+      'last_read_at, novel_id, chapters(chapter_number, title), novels!inner(slug, title, cover_image_url, authors(pen_name), categories(name))',
+    )
+    .order('last_read_at', { ascending: false });
+  if (limit) query = query.limit(limit);
+  const { data } = await query;
+
+  type Row = {
+    last_read_at: string;
+    novel_id: string;
+    chapters: { chapter_number: number; title: string } | null;
+    novels: {
+      slug: string;
+      title: string;
+      cover_image_url: string | null;
+      authors: { pen_name: string } | null;
+      categories: { name: string } | null;
+    } | null;
+  };
+  const rows = ((data ?? []) as unknown as Row[]).filter((r) => r.novels);
+  const totals = await publishedChapterNumbers(supabase, [...new Set(rows.map((r) => r.novel_id))]);
+
+  return rows.map((r) => ({
+    novelSlug: r.novels!.slug,
+    novelTitle: r.novels!.title,
+    coverImageUrl: r.novels!.cover_image_url,
+    authorName: r.novels!.authors?.pen_name ?? null,
+    categoryName: r.novels!.categories?.name ?? null,
+    lastReadAt: r.last_read_at,
+    progress: computeProgress(
+      r.chapters?.chapter_number ?? null,
+      r.chapters?.title ?? null,
+      totals.get(r.novel_id),
+    ),
+  }));
+}
+
+/** The current user's bookmarked novels with reading progress where available. */
+export async function getBookmarksDetailed(): Promise<ShelfItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('bookmarks')
+    .select(
+      'created_at, novels!inner(id, slug, title, cover_image_url, authors(pen_name), categories(name))',
+    )
+    .order('created_at', { ascending: false });
+
+  type Row = {
+    novels: {
+      id: string;
+      slug: string;
+      title: string;
+      cover_image_url: string | null;
+      authors: { pen_name: string } | null;
+      categories: { name: string } | null;
+    } | null;
+  };
+  const rows = ((data ?? []) as unknown as Row[]).filter((r) => r.novels);
+  const novelIds = rows.map((r) => r.novels!.id);
+
+  const { data: hist } = await supabase
+    .from('reading_history')
+    .select('novel_id, last_read_at, chapters(chapter_number, title)');
+  type HistRow = {
+    novel_id: string;
+    last_read_at: string;
+    chapters: { chapter_number: number; title: string } | null;
+  };
+  const histByNovel = new Map<string, HistRow>();
+  for (const h of (hist ?? []) as unknown as HistRow[]) histByNovel.set(h.novel_id, h);
+
+  const totals = await publishedChapterNumbers(supabase, novelIds);
+
+  return rows.map((r) => {
+    const h = histByNovel.get(r.novels!.id);
+    return {
+      novelSlug: r.novels!.slug,
+      novelTitle: r.novels!.title,
+      coverImageUrl: r.novels!.cover_image_url,
+      authorName: r.novels!.authors?.pen_name ?? null,
+      categoryName: r.novels!.categories?.name ?? null,
+      lastReadAt: h?.last_read_at ?? null,
+      progress: computeProgress(
+        h?.chapters?.chapter_number ?? null,
+        h?.chapters?.title ?? null,
+        totals.get(r.novels!.id),
+      ),
+    };
+  });
+}

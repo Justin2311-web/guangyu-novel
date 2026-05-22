@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/supabase/server';
 import {
   getNovelBySlug,
   getPublishedChapters,
-  getReadingHistoryForNovel,
+  getReadingProgressForNovel,
   isBookmarked,
 } from '@/lib/queries';
 import { BookmarkButton } from './BookmarkButton';
@@ -41,8 +41,8 @@ export default async function NovelDetailPage({
 
   const session = await getCurrentUser();
   const isLoggedIn = !!session;
-  const [history, bookmarked] = isLoggedIn
-    ? await Promise.all([getReadingHistoryForNovel(novel.id), isBookmarked(novel.id)])
+  const [progress, bookmarked] = isLoggedIn
+    ? await Promise.all([getReadingProgressForNovel(novel.id), isBookmarked(novel.id)])
     : [null, false];
 
   return (
@@ -89,15 +89,31 @@ export default async function NovelDetailPage({
               <dd>{NOVEL_SERIAL_STATUS_LABELS[novel.status]}</dd>
             </div>
           </dl>
+          {progress && (
+            <div className="max-w-xs pt-1">
+              <div className="flex items-center justify-between text-xs text-stone-500">
+                <span>
+                  第 {progress.chapterNumber} 章 / 共 {progress.total} 章
+                </span>
+                <span>{progress.percent}%</span>
+              </div>
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+                <div
+                  className="h-full rounded-full bg-brand"
+                  style={{ width: `${progress.percent}%` }}
+                />
+              </div>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3 pt-2">
             {firstChapter ? (
-              history ? (
+              progress ? (
                 <>
                   <Link
-                    href={`/novels/${novel.slug}/${history.chapterNumber}`}
+                    href={`/novels/${novel.slug}/${progress.chapterNumber}`}
                     className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
                   >
-                    继续阅读 · 第 {history.chapterNumber} 章
+                    继续阅读 · 第 {progress.chapterNumber} 章
                   </Link>
                   <Link
                     href={`/novels/${novel.slug}/${firstChapter.chapter_number}`}
