@@ -2,7 +2,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { NOVEL_SERIAL_STATUS_LABELS } from '@guangyu/database';
-import { getNovelBySlug, getPublishedChapters } from '@/lib/queries';
+import { getCurrentUser } from '@/lib/supabase/server';
+import {
+  getNovelBySlug,
+  getPublishedChapters,
+  getReadingHistoryForNovel,
+  isBookmarked,
+} from '@/lib/queries';
+import { BookmarkButton } from './BookmarkButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +38,12 @@ export default async function NovelDetailPage({
 
   const chapters = await getPublishedChapters(novel.id);
   const firstChapter = chapters[0];
+
+  const session = await getCurrentUser();
+  const isLoggedIn = !!session;
+  const [history, bookmarked] = isLoggedIn
+    ? await Promise.all([getReadingHistoryForNovel(novel.id), isBookmarked(novel.id)])
+    : [null, false];
 
   return (
     <article className="space-y-8">
@@ -76,14 +89,31 @@ export default async function NovelDetailPage({
               <dd>{NOVEL_SERIAL_STATUS_LABELS[novel.status]}</dd>
             </div>
           </dl>
-          <div className="pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             {firstChapter ? (
-              <Link
-                href={`/novels/${novel.slug}/${firstChapter.chapter_number}`}
-                className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
-              >
-                开始阅读
-              </Link>
+              history ? (
+                <>
+                  <Link
+                    href={`/novels/${novel.slug}/${history.chapterNumber}`}
+                    className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+                  >
+                    继续阅读 · 第 {history.chapterNumber} 章
+                  </Link>
+                  <Link
+                    href={`/novels/${novel.slug}/${firstChapter.chapter_number}`}
+                    className="inline-flex rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:border-brand hover:text-brand"
+                  >
+                    从头开始
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  href={`/novels/${novel.slug}/${firstChapter.chapter_number}`}
+                  className="inline-flex rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+                >
+                  开始阅读
+                </Link>
+              )
             ) : (
               <button
                 type="button"
@@ -93,6 +123,11 @@ export default async function NovelDetailPage({
                 暂无章节
               </button>
             )}
+            <BookmarkButton
+              novelId={novel.id}
+              isLoggedIn={isLoggedIn}
+              initialBookmarked={bookmarked}
+            />
           </div>
         </div>
       </div>

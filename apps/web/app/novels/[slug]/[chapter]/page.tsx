@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { getCurrentUser } from '@/lib/supabase/server';
 import { getNovelBySlug, getPublishedChapters, getChapterContent } from '@/lib/queries';
+import { RecordReading } from './RecordReading';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,8 +48,11 @@ export default async function ChapterReaderPage({
   const prev = idx > 0 ? chapters[idx - 1] : undefined;
   const next = idx >= 0 && idx < chapters.length - 1 ? chapters[idx + 1] : undefined;
 
+  const session = await getCurrentUser();
+
   return (
     <article className="mx-auto max-w-2xl space-y-6">
+      {session && <RecordReading novelId={novel.id} chapterId={current.id} />}
       <nav className="text-sm text-stone-500">
         <Link href={`/novels/${novel.slug}`} className="hover:text-brand">
           {novel.title}
