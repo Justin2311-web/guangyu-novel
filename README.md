@@ -129,6 +129,7 @@ To be configured in Phase 10. Plan: create **two** Vercel projects, both pointin
   - [x] 3f — Site settings CMS + reader integration
 - [ ] Phase 4 — Reader experience & author dashboard
   - [x] 4a — Reader experience foundation (reading history, bookmarks)
+  - [x] 4b — Search & library filtering
 - [ ] Phase 5 — Reader frontend
 - [ ] Phase 6 — Site settings CMS
 - [ ] Phase 7 — Reader accounts (bookmarks, history)

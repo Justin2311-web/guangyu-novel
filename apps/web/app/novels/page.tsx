@@ -1,53 +1,102 @@
 import Link from 'next/link';
-import { getNovels, getCategories } from '@/lib/queries';
+import {
+  NOVEL_SERIAL_STATUSES,
+  NOVEL_SERIAL_STATUS_LABELS,
+  type NovelSerialStatus,
+} from '@guangyu/database';
+import { getNovels, getCategories, type NovelSort } from '@/lib/queries';
 import { NovelCard } from './NovelCard';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = { title: '小说' };
 
+const SORT_LABELS: Record<NovelSort, string> = {
+  updated: '最近更新',
+  created: '最新发布',
+  title: '标题 A-Z',
+};
+
+const inputClass =
+  'rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-brand focus:outline-none';
+
 export default async function NovelsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; status?: string; sort?: string }>;
 }) {
-  const { category } = await searchParams;
-  const [novels, categories] = await Promise.all([getNovels(category), getCategories()]);
-  const activeCategory = categories.find((c) => c.slug === category);
+  const sp = await searchParams;
+  const q = (sp.q ?? '').trim();
+  const categories = await getCategories();
+  const categorySlug = categories.some((c) => c.slug === sp.category) ? sp.category : undefined;
+  const status = (NOVEL_SERIAL_STATUSES as readonly string[]).includes(sp.status ?? '')
+    ? (sp.status as NovelSerialStatus)
+    : undefined;
+  const sort: NovelSort = (['updated', 'created', 'title'] as const).includes(sp.sort as NovelSort)
+    ? (sp.sort as NovelSort)
+    : 'updated';
+
+  const novels = await getNovels({ q, categorySlug, status, sort });
+  const hasFilters = !!(q || categorySlug || status || sp.sort);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">小说书库</h1>
-        {activeCategory && (
-          <p className="mt-1 text-sm text-stone-500">分类：{activeCategory.name}</p>
-        )}
+        {q && <p className="mt-1 text-sm text-stone-500">搜索：「{q}」· {novels.length} 个结果</p>}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href="/novels"
-          className={`rounded-full border px-3 py-1 text-sm ${
-            !category ? 'border-brand text-brand' : 'border-stone-200 text-stone-600'
-          }`}
+      <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto]">
+        <input
+          type="text"
+          name="q"
+          defaultValue={q}
+          placeholder="搜索书名、作者、分类或简介…"
+          className={inputClass}
+        />
+        <select name="category" defaultValue={categorySlug ?? ''} className={inputClass}>
+          <option value="">全部分类</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.slug}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select name="status" defaultValue={status ?? ''} className={inputClass}>
+          <option value="">全部状态</option>
+          {NOVEL_SERIAL_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {NOVEL_SERIAL_STATUS_LABELS[s]}
+            </option>
+          ))}
+        </select>
+        <select name="sort" defaultValue={sort} className={inputClass}>
+          {(Object.keys(SORT_LABELS) as NovelSort[]).map((s) => (
+            <option key={s} value={s}>
+              {SORT_LABELS[s]}
+            </option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
         >
-          全部
-        </Link>
-        {categories.map((c) => (
-          <Link
-            key={c.id}
-            href={`/novels?category=${encodeURIComponent(c.slug)}`}
-            className={`rounded-full border px-3 py-1 text-sm ${
-              category === c.slug ? 'border-brand text-brand' : 'border-stone-200 text-stone-600'
-            }`}
-          >
-            {c.name}
+          搜索
+        </button>
+      </form>
+
+      {hasFilters && (
+        <div>
+          <Link href="/novels" className="text-sm text-stone-500 hover:text-brand">
+            清除筛选
           </Link>
-        ))}
-      </div>
+        </div>
+      )}
 
       {novels.length === 0 ? (
-        <p className="text-stone-500">暂无已发布的小说。</p>
+        <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-12 text-center text-stone-500">
+          {hasFilters ? '没有符合条件的小说，换个关键词或筛选试试。' : '暂无已发布的小说。'}
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {novels.map((n) => (
