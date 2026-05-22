@@ -1,17 +1,26 @@
 import Link from 'next/link';
-import { getActiveBanners, getCategories, getLatestNovels, getSiteSettings } from '@/lib/queries';
+import { getCurrentUser } from '@/lib/supabase/server';
+import {
+  getActiveBanners,
+  getCategories,
+  getContinueReading,
+  getLatestNovels,
+  getSiteSettings,
+} from '@/lib/queries';
 import { NovelCard } from './novels/NovelCard';
 import { HomeBanners } from './HomeBanners';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const [banners, categories, latest, settings] = await Promise.all([
+  const [banners, categories, latest, settings, session] = await Promise.all([
     getActiveBanners(),
     getCategories(),
     getLatestNovels(6),
     getSiteSettings(),
+    getCurrentUser(),
   ]);
+  const continueReading = session ? await getContinueReading(6) : [];
 
   return (
     <section className="space-y-8">
@@ -30,6 +39,36 @@ export default async function HomePage() {
             >
               {settings['home.hero_cta_text']}
             </Link>
+          )}
+        </div>
+      )}
+
+      {session && (
+        <div>
+          <h2 className="mb-3 text-xl font-semibold">继续阅读</h2>
+          {continueReading.length === 0 ? (
+            <p className="text-sm text-stone-500">还没有阅读记录，去书库挑一本开始吧。</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {continueReading.map((item) => (
+                <Link
+                  key={item.novelSlug}
+                  href={
+                    item.chapterNumber
+                      ? `/novels/${item.novelSlug}/${item.chapterNumber}`
+                      : `/novels/${item.novelSlug}`
+                  }
+                  className="rounded-lg border border-stone-200 bg-white p-4 transition hover:border-brand"
+                >
+                  <div className="font-medium text-stone-800">{item.novelTitle}</div>
+                  <div className="mt-1 text-sm text-stone-500">
+                    {item.chapterNumber
+                      ? `第 ${item.chapterNumber} 章${item.chapterTitle ? ` · ${item.chapterTitle}` : ''}`
+                      : '继续阅读'}
+                  </div>
+                </Link>
+              ))}
+            </div>
           )}
         </div>
       )}

@@ -141,3 +141,119 @@ export async function getChapterContent(
     .maybeSingle();
   return (data as ChapterContent) ?? null;
 }
+
+// =====================================================================
+// Reader experience — reading history & bookmarks (RLS scopes every
+// query below to the current user; logged-out callers get empty results).
+// =====================================================================
+
+/** The user's last-read chapter for a novel, or null. */
+export async function getReadingHistoryForNovel(
+  novelId: string,
+): Promise<{ chapterNumber: number } | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('reading_history')
+    .select('chapters(chapter_number)')
+    .eq('novel_id', novelId)
+    .maybeSingle();
+  const num = (data as { chapters: { chapter_number: number } | null } | null)?.chapters
+    ?.chapter_number;
+  return typeof num === 'number' ? { chapterNumber: num } : null;
+}
+
+export type ContinueReadingItem = {
+  novelSlug: string;
+  novelTitle: string;
+  coverImageUrl: string | null;
+  chapterNumber: number | null;
+  chapterTitle: string | null;
+  lastReadAt: string;
+};
+
+/** Recently-read novels for the current user, newest first (visible novels only). */
+export async function getContinueReading(limit = 6): Promise<ContinueReadingItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('reading_history')
+    .select(
+      'last_read_at, novels!inner(slug, title, cover_image_url), chapters(chapter_number, title)',
+    )
+    .order('last_read_at', { ascending: false })
+    .limit(limit);
+
+  type Row = {
+    last_read_at: string;
+    novels: { slug: string; title: string; cover_image_url: string | null } | null;
+    chapters: { chapter_number: number; title: string } | null;
+  };
+  return ((data ?? []) as unknown as Row[])
+    .filter((r) => r.novels)
+    .map((r) => ({
+      novelSlug: r.novels!.slug,
+      novelTitle: r.novels!.title,
+      coverImageUrl: r.novels!.cover_image_url,
+      chapterNumber: r.chapters?.chapter_number ?? null,
+      chapterTitle: r.chapters?.title ?? null,
+      lastReadAt: r.last_read_at,
+    }));
+}
+
+/** Whether the current user has bookmarked a novel. */
+export async function isBookmarked(novelId: string): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('bookmarks')
+    .select('id')
+    .eq('novel_id', novelId)
+    .maybeSingle();
+  return !!data;
+}
+
+export type BookmarkItem = {
+  novelSlug: string;
+  novelTitle: string;
+  authorName: string | null;
+  categoryName: string | null;
+  continueChapterNumber: number | null;
+};
+
+/** The current user's bookmarked novels with a continue-reading chapter if any. */
+export async function getBookmarks(): Promise<BookmarkItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('bookmarks')
+    .select(
+      'created_at, novels!inner(id, slug, title, authors(pen_name), categories(name))',
+    )
+    .order('created_at', { ascending: false });
+
+  type Row = {
+    novels: {
+      id: string;
+      slug: string;
+      title: string;
+      authors: { pen_name: string } | null;
+      categories: { name: string } | null;
+    } | null;
+  };
+  const rows = ((data ?? []) as unknown as Row[]).filter((r) => r.novels);
+
+  // Map each bookmarked novel to the user's last-read chapter (if any).
+  const { data: hist } = await supabase
+    .from('reading_history')
+    .select('novel_id, chapters(chapter_number)');
+  type HistRow = { novel_id: string; chapters: { chapter_number: number } | null };
+  const continueByNovel = new Map<string, number>();
+  for (const h of (hist ?? []) as unknown as HistRow[]) {
+    if (h.chapters?.chapter_number != null) continueByNovel.set(h.novel_id, h.chapters.chapter_number);
+  }
+
+  return rows.map((r) => ({
+    novelSlug: r.novels!.slug,
+    novelTitle: r.novels!.title,
+    authorName: r.novels!.authors?.pen_name ?? null,
+    categoryName: r.novels!.categories?.name ?? null,
+    continueChapterNumber: continueByNovel.get(r.novels!.id) ?? null,
+  }));
+}
