@@ -3,10 +3,18 @@ import { createSupabaseServerClient, getCurrentAdminUser } from '@/lib/supabase/
 import { ROLES, USER_ROLE_LABELS, type Role } from '@guangyu/database';
 import { RoleSelect } from './RoleSelect';
 import { SuspendButton } from './SuspendButton';
+import { DeleteRestoreButton } from './DeleteRestoreButton';
 
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 20;
+
+const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: '全部（不含已删除）' },
+  { value: 'active', label: '正常' },
+  { value: 'suspended', label: '已停用' },
+  { value: 'deleted', label: '已删除' },
+];
 
 type UserRow = {
   id: string;
@@ -14,6 +22,7 @@ type UserRow = {
   role: Role;
   display_name: string | null;
   suspended: boolean;
+  deleted_at: string | null;
   created_at: string;
   total_count: number;
 };
@@ -21,11 +30,14 @@ type UserRow = {
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; role?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; role?: string; status?: string; page?: string }>;
 }) {
   const sp = await searchParams;
   const q = (sp.q ?? '').trim();
   const roleFilter = (ROLES as readonly string[]).includes(sp.role ?? '') ? (sp.role as Role) : '';
+  const statusFilter = ['active', 'suspended', 'deleted'].includes(sp.status ?? '')
+    ? (sp.status as string)
+    : '';
   const page = Math.max(1, Number(sp.page) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
@@ -34,6 +46,7 @@ export default async function AdminUsersPage({
   const { data, error } = await supabase.rpc('admin_list_users', {
     p_search: q || null,
     p_role: roleFilter || null,
+    p_status: statusFilter || null,
     p_limit: PAGE_SIZE,
     p_offset: offset,
   });
@@ -46,6 +59,7 @@ export default async function AdminUsersPage({
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (roleFilter) params.set('role', roleFilter);
+    if (statusFilter) params.set('status', statusFilter);
     params.set('page', String(p));
     return `/users?${params.toString()}`;
   };
@@ -65,7 +79,7 @@ export default async function AdminUsersPage({
             name="q"
             defaultValue={q}
             placeholder="搜索…"
-            className="mt-1 block w-64 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+            className="mt-1 block w-56 rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
           />
         </label>
         <label className="block">
@@ -83,13 +97,27 @@ export default async function AdminUsersPage({
             ))}
           </select>
         </label>
+        <label className="block">
+          <span className="text-xs text-stone-500">状态</span>
+          <select
+            name="status"
+            defaultValue={statusFilter}
+            className="mt-1 block rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          >
+            {STATUS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <button
           type="submit"
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
         >
           搜索
         </button>
-        {(q || roleFilter) && (
+        {(q || roleFilter || statusFilter) && (
           <Link href="/users" className="px-2 py-2 text-sm text-stone-500 hover:text-brand">
             重置
           </Link>
@@ -124,6 +152,7 @@ export default async function AdminUsersPage({
             )}
             {rows.map((u) => {
               const isSelf = u.id === session?.user.id;
+              const isDeleted = !!u.deleted_at;
               return (
                 <tr key={u.id} className="border-b border-stone-100 last:border-0">
                   <td className="px-4 py-3 font-medium text-stone-800">
@@ -132,11 +161,15 @@ export default async function AdminUsersPage({
                   </td>
                   <td className="px-4 py-3 text-stone-500">{u.display_name ?? '—'}</td>
                   <td className="px-4 py-3">
-                    <RoleSelect id={u.id} role={u.role} disabled={isSelf} />
+                    <RoleSelect id={u.id} role={u.role} disabled={isSelf || isDeleted} />
                   </td>
                   <td className="px-4 py-3">
-                    {u.suspended ? (
-                      <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700">
+                    {isDeleted ? (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-800">
+                        已删除
+                      </span>
+                    ) : u.suspended ? (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">
                         已停用
                       </span>
                     ) : (
@@ -147,12 +180,22 @@ export default async function AdminUsersPage({
                   </td>
                   <td className="px-4 py-3 text-stone-500">{u.created_at.slice(0, 10)}</td>
                   <td className="px-4 py-3">
-                    <SuspendButton
-                      id={u.id}
-                      email={u.email}
-                      suspended={u.suspended}
-                      disabled={isSelf}
-                    />
+                    <div className="flex items-center gap-4">
+                      {!isDeleted && (
+                        <SuspendButton
+                          id={u.id}
+                          email={u.email}
+                          suspended={u.suspended}
+                          disabled={isSelf}
+                        />
+                      )}
+                      <DeleteRestoreButton
+                        id={u.id}
+                        email={u.email}
+                        deleted={isDeleted}
+                        disabled={isSelf}
+                      />
+                    </div>
                   </td>
                 </tr>
               );

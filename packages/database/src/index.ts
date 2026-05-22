@@ -80,6 +80,9 @@ export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   suspended: boolean;
+  deleted_at: string | null;
+  deleted_by: string | null;
+  deleted_reason: string | null;
   created_at: string;
   updated_at: string;
 }

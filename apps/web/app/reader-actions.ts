@@ -14,7 +14,7 @@ export async function recordReadingProgressAction(
   chapterId: string,
 ): Promise<void> {
   const session = await getCurrentUser();
-  if (!session) return; // only logged-in users have history
+  if (!session || session.profile?.deleted_at) return; // only active logged-in users
   if (!novelId || !chapterId) return;
 
   const supabase = await createSupabaseServerClient();
@@ -33,6 +33,7 @@ export async function recordReadingProgressAction(
 export async function toggleBookmarkAction(novelId: string): Promise<BookmarkToggleResult> {
   const session = await getCurrentUser();
   if (!session) return { ok: false, needLogin: true };
+  if (session.profile?.deleted_at) return { ok: false, error: '账户不可用。' };
   if (!novelId) return { ok: false, error: '参数无效。' };
 
   const supabase = await createSupabaseServerClient();

@@ -62,20 +62,20 @@ export async function updateAdminSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Authenticated — fetch role + suspension state.
+  // Authenticated — fetch role + suspension/deletion state.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, suspended')
+    .select('role, suspended, deleted_at')
     .eq('id', user.id)
     .maybeSingle();
   const role = (profile?.role ?? 'reader') as Role;
 
-  // Suspended users are locked out of the admin entirely.
-  if (profile?.suspended) {
+  // Soft-deleted or suspended users are locked out of the admin entirely.
+  if (profile?.deleted_at || profile?.suspended) {
     if (pathname === '/login') return response;
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('error', 'suspended');
+    url.searchParams.set('error', profile?.deleted_at ? 'deleted' : 'suspended');
     return NextResponse.redirect(url);
   }
 
