@@ -6,10 +6,18 @@ export type MyAuthor = { id: string; pen_name: string; bio: string | null; statu
 /** The authors row owned by the current user (null if none — e.g. admins). */
 export async function getMyAuthor(): Promise<MyAuthor | null> {
   const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  // NOTE: must filter by profile_id explicitly. The "authors: public select"
+  // RLS policy exposes ALL author rows, so relying on RLS to scope to the
+  // current user would return every row and break .maybeSingle().
   const { data } = await supabase
     .from('authors')
     .select('id, pen_name, bio, status')
-    .maybeSingle(); // RLS "authors: self manage" scopes to profile_id = auth.uid()
+    .eq('profile_id', user.id)
+    .maybeSingle();
   return (data as MyAuthor | null) ?? null;
 }
 
