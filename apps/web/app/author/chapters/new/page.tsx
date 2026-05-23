@@ -1,4 +1,4 @@
-import { getMyAuthor, getMyNovelOptions } from '@/lib/author';
+import { ensureMyAuthor, getMyNovelOptions } from '@/lib/author';
 import { createChapterAction } from '../../actions';
 import { ChapterForm } from '../ChapterForm';
 
@@ -9,7 +9,7 @@ export default async function NewChapterPage({
 }: {
   searchParams: Promise<{ novel?: string }>;
 }) {
-  const author = await getMyAuthor();
+  const author = await ensureMyAuthor();
   if (!author) return <p className="text-sm text-stone-500">未找到作者资料。</p>;
 
   const novels = await getMyNovelOptions(author.id);

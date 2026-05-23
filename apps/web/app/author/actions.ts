@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server';
 import { NOVEL_SERIAL_STATUSES, CHAPTER_STATUSES, type NovelSerialStatus } from '@guangyu/database';
+import { ensureMyAuthor } from '@/lib/author';
 import type { AuthorFormState } from './types';
 
 function slugify(input: string): string {
@@ -28,11 +29,10 @@ async function authorContext(): Promise<
   if (role !== 'author' && role !== 'admin' && role !== 'superadmin') {
     return { ok: false, error: '没有作者权限。' };
   }
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.from('authors').select('id').maybeSingle();
-  const authorId = (data as { id: string } | null)?.id;
-  if (!authorId) return { ok: false, error: '尚未创建作者资料，请联系管理员。' };
-  return { ok: true, authorId };
+  // Self-heal a missing authors row (e.g. promoted via the admin role dropdown).
+  const author = await ensureMyAuthor();
+  if (!author) return { ok: false, error: '尚未创建作者资料，请联系管理员。' };
+  return { ok: true, authorId: author.id };
 }
 
 function parseNovel(formData: FormData) {

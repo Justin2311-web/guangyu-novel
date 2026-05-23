@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { CHAPTER_STATUS_LABELS } from '@guangyu/database';
-import { getMyAuthor, getMyNovels, getMyChapters } from '@/lib/author';
+import { ensureMyAuthor, getMyNovels, getMyChapters } from '@/lib/author';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +9,7 @@ export default async function AuthorChaptersPage({
 }: {
   searchParams: Promise<{ novel?: string }>;
 }) {
-  const author = await getMyAuthor();
+  const author = await ensureMyAuthor();
   if (!author) return <p className="text-sm text-stone-500">未找到作者资料。</p>;
 
   const novels = await getMyNovels(author.id);
@@ -57,7 +57,14 @@ export default async function AuthorChaptersPage({
                   <td className="px-4 py-3 text-stone-500">{c.novels?.title ?? '—'}</td>
                   <td className="px-4 py-3 text-stone-500">{c.chapter_number}</td>
                   <td className="px-4 py-3 font-medium text-stone-800">{c.title}</td>
-                  <td className="px-4 py-3 text-stone-500">{CHAPTER_STATUS_LABELS[c.status]}</td>
+                  <td className="px-4 py-3 text-stone-500">
+                    {CHAPTER_STATUS_LABELS[c.status]}
+                    {c.status === 'rejected' && c.review_note && (
+                      <div className="mt-1 max-w-[200px] text-xs text-red-600">
+                        拒绝原因：{c.review_note}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     <Link href={`/author/chapters/${c.id}/edit`} className="text-brand hover:underline">
                       编辑
