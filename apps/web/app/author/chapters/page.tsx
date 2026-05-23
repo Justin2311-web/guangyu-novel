@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { CHAPTER_STATUS_LABELS } from '@guangyu/database';
-import { getMyAuthor, getMyNovels, getMyChapters } from '@/lib/author';
+import { ensureMyAuthor, getMyNovels, getMyChapters } from '@/lib/author';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +9,7 @@ export default async function AuthorChaptersPage({
 }: {
   searchParams: Promise<{ novel?: string }>;
 }) {
-  const author = await getMyAuthor();
+  const author = await ensureMyAuthor();
   if (!author) return <p className="text-sm text-stone-500">未找到作者资料。</p>;
 
   const novels = await getMyNovels(author.id);

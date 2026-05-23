@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { NOVEL_SERIAL_STATUS_LABELS } from '@guangyu/database';
-import { getMyAuthor, getMyNovels, getMyChapters, computeNovelStats } from '@/lib/author';
+import { ensureMyAuthor, getMyNovels, getMyChapters, computeNovelStats } from '@/lib/author';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +14,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 export default async function AuthorDashboardPage() {
-  const author = await getMyAuthor();
+  const author = await ensureMyAuthor();
 
   if (!author) {
     return (

@@ -20,12 +20,25 @@ async function requireSuperadmin() {
 async function getTarget(supabase: Supabase, id: string) {
   const { data } = await supabase
     .from('profiles')
-    .select('id, role, suspended, deleted_at')
+    .select('id, role, suspended, deleted_at, display_name')
     .eq('id', id)
     .maybeSingle();
   return data as
-    | { id: string; role: Role; suspended: boolean; deleted_at: string | null }
+    | { id: string; role: Role; suspended: boolean; deleted_at: string | null; display_name: string | null }
     | null;
+}
+
+/** Ensure a promoted author has a matching authors row (the portal needs it). */
+async function ensureAuthorRow(supabase: Supabase, profileId: string, displayName: string | null) {
+  const { data: existing } = await supabase
+    .from('authors')
+    .select('id')
+    .eq('profile_id', profileId)
+    .maybeSingle();
+  if (existing) return;
+  await supabase
+    .from('authors')
+    .insert({ profile_id: profileId, pen_name: displayName?.trim() || '新作者', status: 'active' });
 }
 
 /** Count of OTHER active superadmins (not this id, not deleted, not suspended). */
@@ -66,6 +79,11 @@ export async function updateUserRoleAction(id: string, role: Role): Promise<User
   if (error) return { ok: false, error: `数据库错误：${error.code ?? ''} ${error.message}` };
   if (!data || data.length === 0) {
     return { ok: false, error: '更新未生效（影响 0 行，可能被 RLS 拦截）。' };
+  }
+
+  // Promoting to author must also create the authors profile the portal needs.
+  if (role === 'author') {
+    await ensureAuthorRow(supabase, id, target.display_name);
   }
 
   revalidatePath('/users');

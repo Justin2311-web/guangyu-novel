@@ -13,6 +13,40 @@ export async function getMyAuthor(): Promise<MyAuthor | null> {
   return (data as MyAuthor | null) ?? null;
 }
 
+/**
+ * Like getMyAuthor, but self-heals a missing authors row for users who hold the
+ * author role without one (e.g. promoted via the admin role dropdown rather
+ * than the application-approval flow). RLS "authors: self manage" lets a user
+ * insert their own row (profile_id = auth.uid()).
+ */
+export async function ensureMyAuthor(): Promise<MyAuthor | null> {
+  const existing = await getMyAuthor();
+  if (existing) return existing;
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, display_name')
+    .eq('id', user.id)
+    .maybeSingle();
+  const role = (profile as { role?: string } | null)?.role;
+  if (role !== 'author' && role !== 'admin' && role !== 'superadmin') return null;
+
+  const penName =
+    (profile as { display_name?: string | null } | null)?.display_name?.trim() || '新作者';
+  const { error } = await supabase
+    .from('authors')
+    .insert({ profile_id: user.id, pen_name: penName, status: 'active' });
+  // On unique-violation race or success, re-read the canonical row.
+  if (error && error.code !== '23505') return null;
+  return getMyAuthor();
+}
+
 export type MyNovel = {
   id: string;
   slug: string;

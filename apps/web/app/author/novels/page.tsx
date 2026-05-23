@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { NOVEL_SERIAL_STATUS_LABELS } from '@guangyu/database';
-import { getMyAuthor, getMyNovels } from '@/lib/author';
+import { ensureMyAuthor, getMyNovels } from '@/lib/author';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +13,7 @@ const REVIEW_BADGE: Record<string, { text: string; cls: string }> = {
 };
 
 export default async function AuthorNovelsPage() {
-  const author = await getMyAuthor();
+  const author = await ensureMyAuthor();
   if (!author) {
     return <p className="text-sm text-stone-500">未找到作者资料。</p>;
   }
