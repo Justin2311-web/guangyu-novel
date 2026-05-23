@@ -9,6 +9,7 @@ const PUBLIC_PATHS = new Set(['/login', '/auth/callback']);
 const SECTION_ACCESS: { prefix: string; roles: Role[] }[] = [
   { prefix: '/users', roles: ['superadmin'] },
   { prefix: '/settings', roles: ['superadmin'] },
+  { prefix: '/review', roles: ['superadmin', 'admin'] },
   { prefix: '/authors', roles: ['superadmin', 'admin'] },
   { prefix: '/categories', roles: ['superadmin', 'admin'] },
   { prefix: '/banners', roles: ['superadmin', 'admin'] },

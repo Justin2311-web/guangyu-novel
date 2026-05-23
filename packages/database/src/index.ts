@@ -156,6 +156,7 @@ export interface Novel {
   status: NovelSerialStatus;
   is_published: boolean;
   review_status: NovelReviewStatus;
+  review_note: string | null;
   featured: boolean;
   view_count: number;
   created_at: string;
@@ -170,6 +171,7 @@ export interface Chapter {
   title: string;
   content: string;
   status: ChapterStatus;
+  review_note: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;

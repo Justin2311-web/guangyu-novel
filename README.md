@@ -133,9 +133,10 @@ To be configured in Phase 10. Plan: create **two** Vercel projects, both pointin
   - [x] 4c — Reader bookshelf & reading progress
   - [x] 4d — Admin user soft-delete + management hardening
   - [x] 4e — Self-service author application workflow
+- [ ] Phase 5 — Author publishing platform
   - [x] 5a — Author portal (dashboard, novel & chapter management)
-  - [x] 4e — Author application workflow (apply → admin review → role promotion)
-- [ ] Phase 5 — Reader frontend
+  - [x] 5b — Admin review center (approve/reject novels & chapters)
+- [ ] Phase 6 — Reader frontend polish
 - [ ] Phase 6 — Site settings CMS
 - [ ] Phase 7 — Reader accounts (bookmarks, history)
 - [ ] Phase 8 — SEO & performance

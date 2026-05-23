@@ -21,6 +21,7 @@ export type MyNovel = {
   cover_image_url: string | null;
   status: NovelSerialStatus;
   review_status: NovelReviewStatus;
+  review_note: string | null;
   is_published: boolean;
   category_id: string | null;
   updated_at: string;
@@ -28,7 +29,7 @@ export type MyNovel = {
 };
 
 const MY_NOVEL_SELECT =
-  'id, slug, title, description, cover_image_url, status, review_status, is_published, category_id, updated_at, categories(name)';
+  'id, slug, title, description, cover_image_url, status, review_status, review_note, is_published, category_id, updated_at, categories(name)';
 
 /** Novels owned by an author (RLS also enforces ownership). */
 export async function getMyNovels(authorId: string): Promise<MyNovel[]> {
@@ -71,9 +72,13 @@ export type MyChapter = {
   title: string;
   content: string;
   status: ChapterStatus;
+  review_note: string | null;
   updated_at: string;
   novels: { title: string; slug: string } | null;
 };
+
+const MY_CHAPTER_SELECT =
+  'id, novel_id, chapter_number, title, content, status, review_note, updated_at, novels(title, slug)';
 
 /** All chapters across the author's novels (RLS enforces ownership). */
 export async function getMyChapters(novelIds: string[]): Promise<MyChapter[]> {
@@ -81,7 +86,7 @@ export async function getMyChapters(novelIds: string[]): Promise<MyChapter[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('chapters')
-    .select('id, novel_id, chapter_number, title, content, status, updated_at, novels(title, slug)')
+    .select(MY_CHAPTER_SELECT)
     .in('novel_id', novelIds)
     .order('updated_at', { ascending: false });
   return (data ?? []) as unknown as MyChapter[];
@@ -92,7 +97,7 @@ export async function getMyChapter(novelIds: string[], id: string): Promise<MyCh
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('chapters')
-    .select('id, novel_id, chapter_number, title, content, status, updated_at, novels(title, slug)')
+    .select(MY_CHAPTER_SELECT)
     .in('novel_id', novelIds)
     .eq('id', id)
     .maybeSingle();
