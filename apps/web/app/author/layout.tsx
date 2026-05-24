@@ -8,6 +8,7 @@ const NAV = [
   { href: '/author/dashboard', label: '概览' },
   { href: '/author/novels', label: '我的作品' },
   { href: '/author/chapters', label: '章节管理' },
+  { href: '/author/profile', label: '作者资料' },
 ];
 
 export default async function AuthorLayout({ children }: { children: React.ReactNode }) {

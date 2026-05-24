@@ -1,7 +1,14 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { NovelReviewStatus, NovelSerialStatus, ChapterStatus } from '@guangyu/database';
 
-export type MyAuthor = { id: string; pen_name: string; bio: string | null; status: string };
+export type MyAuthor = {
+  id: string;
+  pen_name: string;
+  bio: string | null;
+  status: string;
+  avatar_url: string | null;
+  slug: string | null;
+};
 
 /** The authors row owned by the current user (null if none — e.g. admins). */
 export async function getMyAuthor(): Promise<MyAuthor | null> {
@@ -15,7 +22,7 @@ export async function getMyAuthor(): Promise<MyAuthor | null> {
   // current user would return every row and break .maybeSingle().
   const { data } = await supabase
     .from('authors')
-    .select('id, pen_name, bio, status')
+    .select('id, pen_name, bio, status, avatar_url, slug')
     .eq('profile_id', user.id)
     .maybeSingle();
   return (data as MyAuthor | null) ?? null;

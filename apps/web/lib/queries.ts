@@ -53,12 +53,12 @@ export type NovelListItem = {
   status: NovelSerialStatus;
   created_at: string;
   updated_at: string;
-  authors: { pen_name: string } | null;
+  authors: { pen_name: string; slug: string | null } | null;
   categories: { name: string; slug: string } | null;
 };
 
 const NOVEL_LIST_SELECT =
-  'id, slug, title, description, cover_image_url, status, created_at, updated_at, authors(pen_name), categories(name, slug)';
+  'id, slug, title, description, cover_image_url, status, created_at, updated_at, authors(pen_name, slug), categories(name, slug)';
 
 /** Latest published novels (RLS only returns is_published = true). */
 export async function getLatestNovels(limit = 8): Promise<NovelListItem[]> {
@@ -145,6 +145,126 @@ export async function getNovels(options: NovelQueryOptions = {}): Promise<NovelL
   }
 
   return rows;
+}
+
+// =====================================================================
+// Phase 6a — public author profiles
+//   RLS: "authors: public select" exposes author rows to everyone, and
+//   embedded novel/chapter counts respect the novels/chapters RLS, so
+//   anonymous visitors only ever see *published* novels and chapters.
+// =====================================================================
+
+export type PublicAuthorListItem = {
+  id: string;
+  slug: string;
+  penName: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
+  novelCount: number;
+};
+
+/** Active authors for the public directory, most prolific first. */
+export async function getPublicAuthors(): Promise<PublicAuthorListItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('authors')
+    .select('id, slug, pen_name, bio, avatar_url, created_at, status, novels(count)')
+    .eq('status', 'active');
+
+  type Row = {
+    id: string;
+    slug: string | null;
+    pen_name: string;
+    bio: string | null;
+    avatar_url: string | null;
+    created_at: string;
+    novels: { count: number }[] | null;
+  };
+
+  return ((data ?? []) as unknown as Row[])
+    .filter((r) => r.slug)
+    .map((r) => ({
+      id: r.id,
+      slug: r.slug as string,
+      penName: r.pen_name,
+      bio: r.bio,
+      avatarUrl: r.avatar_url,
+      createdAt: r.created_at,
+      novelCount: r.novels?.[0]?.count ?? 0,
+    }))
+    .sort((a, b) => b.novelCount - a.novelCount || a.createdAt.localeCompare(b.createdAt));
+}
+
+export type PublicAuthorDetail = {
+  id: string;
+  slug: string;
+  penName: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
+};
+
+export async function getPublicAuthorBySlug(slug: string): Promise<PublicAuthorDetail | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('authors')
+    .select('id, slug, pen_name, bio, avatar_url, created_at, status')
+    .eq('slug', decodeSlug(slug))
+    .eq('status', 'active')
+    .maybeSingle();
+  if (!data) return null;
+  const r = data as {
+    id: string;
+    slug: string;
+    pen_name: string;
+    bio: string | null;
+    avatar_url: string | null;
+    created_at: string;
+  };
+  return {
+    id: r.id,
+    slug: r.slug,
+    penName: r.pen_name,
+    bio: r.bio,
+    avatarUrl: r.avatar_url,
+    createdAt: r.created_at,
+  };
+}
+
+export type AuthorPublicStats = { totalNovels: number; totalChapters: number; totalViews: number };
+
+/** An author's published novels (RLS-gated) plus aggregate public stats. */
+export async function getAuthorPublicData(
+  authorId: string,
+): Promise<{ novels: NovelListItem[]; stats: AuthorPublicStats }> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('novels')
+    .select(
+      'id, slug, title, description, cover_image_url, status, created_at, updated_at, view_count, authors(pen_name, slug), categories(name, slug)',
+    )
+    .eq('author_id', authorId)
+    .order('updated_at', { ascending: false });
+
+  const rows = (data ?? []) as unknown as (NovelListItem & { view_count: number | null })[];
+  const totalViews = rows.reduce((sum, n) => sum + (n.view_count ?? 0), 0);
+
+  let totalChapters = 0;
+  const novelIds = rows.map((n) => n.id);
+  if (novelIds.length > 0) {
+    const { count } = await supabase
+      .from('chapters')
+      .select('id', { count: 'exact', head: true })
+      .in('novel_id', novelIds)
+      .eq('status', 'published');
+    totalChapters = count ?? 0;
+  }
+
+  return {
+    novels: rows as NovelListItem[],
+    stats: { totalNovels: rows.length, totalChapters, totalViews },
+  };
 }
 
 export type NovelDetail = NovelListItem & { description: string | null };
