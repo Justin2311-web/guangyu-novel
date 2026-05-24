@@ -170,6 +170,33 @@ export interface Comment {
   updated_at: string;
 }
 
+export type NotificationType =
+  | 'author_application_approved'
+  | 'author_application_rejected'
+  | 'novel_approved'
+  | 'novel_rejected'
+  | 'chapter_approved'
+  | 'chapter_rejected'
+  | 'novel_new_chapter'
+  | 'comment_on_novel'
+  | 'system';
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  target_url: string | null;
+  actor_id: string | null;
+  novel_id: string | null;
+  chapter_id: string | null;
+  comment_id: string | null;
+  read_at: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
 export interface Novel {
   id: string;
   author_id: string;
