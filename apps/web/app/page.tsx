@@ -3,137 +3,174 @@ import { getCurrentUser } from '@/lib/supabase/server';
 import {
   getActiveBanners,
   getCategories,
-  getReadingList,
+  getFeaturedNovels,
   getLatestNovels,
+  getPopularNovels,
+  getReadingList,
   getSiteSettings,
+  type NovelListItem,
 } from '@/lib/queries';
 import { NovelCard } from './novels/NovelCard';
 import { HomeBanners } from './HomeBanners';
+import { SectionHeader } from './components/SectionHeader';
+import { PosterCard } from './components/PosterCard';
+import { CategoryGrid } from './components/CategoryGrid';
+import { RankList } from './components/RankList';
 
 export const dynamic = 'force-dynamic';
 
+function FeaturedHero({ novel }: { novel: NovelListItem }) {
+  return (
+    <div className="gy-card overflow-hidden border-amber-100 bg-gradient-to-br from-amber-50 to-white">
+      <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
+        <Link
+          href={`/novels/${encodeURIComponent(novel.slug)}`}
+          className="mx-auto h-52 w-36 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-stone-100 shadow-md sm:mx-0"
+        >
+          {novel.cover_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={novel.cover_image_url} alt={novel.title} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center p-3 text-center font-serif text-xl text-brand/50">
+              {novel.title}
+            </div>
+          )}
+        </Link>
+        <div className="min-w-0 flex-1">
+          <span className="inline-block rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand-dark">
+            本期推荐
+          </span>
+          <h1 className="mt-2 font-serif text-2xl font-bold text-stone-900">{novel.title}</h1>
+          <p className="mt-1 text-sm text-stone-500">
+            {novel.authors?.pen_name ?? '佚名'}
+            {novel.categories?.name ? ` · ${novel.categories.name}` : ''}
+          </p>
+          {novel.description && (
+            <p className="mt-3 line-clamp-3 leading-relaxed text-stone-600">{novel.description}</p>
+          )}
+          <Link href={`/novels/${encodeURIComponent(novel.slug)}`} className="gy-btn-primary mt-4">
+            立即阅读
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default async function HomePage() {
-  const [banners, categories, latest, settings, session] = await Promise.all([
+  const [banners, categories, featured, latest, popular, settings, session] = await Promise.all([
     getActiveBanners(),
     getCategories(),
+    getFeaturedNovels(6),
     getLatestNovels(6),
+    getPopularNovels(8),
     getSiteSettings(),
     getCurrentUser(),
   ]);
-  const recentlyRead = session ? await getReadingList(5) : [];
+  const recentlyRead = session ? await getReadingList(4) : [];
 
   return (
-    <section className="space-y-8">
+    <div className="space-y-10">
+      {/* Hero: banners → featured novel → settings hero */}
       {banners.length > 0 ? (
         <HomeBanners banners={banners} />
+      ) : featured.length > 0 ? (
+        <FeaturedHero novel={featured[0]!} />
       ) : (
         <div className="rounded-2xl bg-gradient-to-br from-brand to-brand-dark p-10 text-white shadow-sm">
-          <h1 className="text-3xl font-semibold">{settings['home.hero_title']}</h1>
+          <h1 className="font-serif text-3xl font-bold">{settings['home.hero_title']}</h1>
           {settings['home.hero_subtitle'] && (
             <p className="mt-3 max-w-xl text-white/90">{settings['home.hero_subtitle']}</p>
-          )}
-          {settings['home.hero_cta_text'] && settings['home.hero_cta_link'] && (
-            <Link
-              href={settings['home.hero_cta_link']}
-              className="mt-5 inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-medium text-brand hover:bg-white/90"
-            >
-              {settings['home.hero_cta_text']}
-            </Link>
           )}
         </div>
       )}
 
+      {/* Search */}
       <form method="get" action="/novels" className="flex gap-2">
         <input
           type="text"
           name="q"
           placeholder="搜索书名、作者、分类…"
-          className="flex-1 rounded-md border border-stone-300 px-4 py-2 text-sm focus:border-brand focus:outline-none"
+          className="flex-1 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand/40"
         />
-        <button
-          type="submit"
-          className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:bg-brand-dark"
-        >
-          搜索
-        </button>
+        <button type="submit" className="gy-btn-primary px-6">搜索</button>
       </form>
 
+      {/* Recently read (logged-in) */}
       {session && (
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">最近阅读</h2>
-            <Link href="/bookshelf" className="text-sm text-brand hover:underline">
-              我的书架
-            </Link>
-          </div>
+        <section>
+          <SectionHeader title="最近阅读" href="/bookshelf" more="我的书架" />
           {recentlyRead.length === 0 ? (
             <p className="text-sm text-stone-500">还没有阅读记录，去书库挑一本开始吧。</p>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {recentlyRead.map((item) => (
                 <Link
                   key={item.novelSlug}
-                  href={
-                    item.progress
-                      ? `/novels/${item.novelSlug}/${item.progress.chapterNumber}`
-                      : `/novels/${item.novelSlug}`
-                  }
-                  className="rounded-lg border border-stone-200 bg-white p-4 transition hover:border-brand"
+                  href={item.progress ? `/novels/${item.novelSlug}/${item.progress.chapterNumber}` : `/novels/${item.novelSlug}`}
+                  className="gy-card p-4 hover:border-brand"
                 >
-                  <div className="truncate font-medium text-stone-800">{item.novelTitle}</div>
-                  <div className="mt-1 text-sm text-stone-500">
+                  <div className="truncate font-serif font-medium text-stone-800">{item.novelTitle}</div>
+                  <div className="mt-1 text-xs text-stone-500">
                     {item.progress
-                      ? `第 ${item.progress.chapterNumber} 章 / 共 ${item.progress.total} 章 · ${item.progress.percent}%`
+                      ? `第 ${item.progress.chapterNumber} 章 · ${item.progress.percent}%`
                       : '继续阅读'}
                   </div>
                 </Link>
               ))}
             </div>
           )}
-        </div>
+        </section>
       )}
 
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">分类</h2>
-          <Link href="/categories" className="text-sm text-brand hover:underline">
-            查看全部
-          </Link>
-        </div>
-        {categories.length === 0 ? (
-          <p className="text-sm text-stone-500">暂无分类。</p>
+      {/* Categories */}
+      <section>
+        <SectionHeader title="分类" href="/categories" />
+        <CategoryGrid categories={categories} />
+      </section>
+
+      {/* Recommended */}
+      <section>
+        <SectionHeader title="推荐小说" href="/novels" />
+        {featured.length === 0 ? (
+          <p className="text-sm text-stone-500">暂无推荐作品。</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                href={`/novels?category=${encodeURIComponent(c.slug)}`}
-                className="rounded-full border border-stone-200 bg-white px-4 py-1.5 text-sm text-stone-700 transition hover:border-brand hover:text-brand"
-              >
-                {c.name}
-              </Link>
+          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+            {featured.map((n) => (
+              <PosterCard key={n.id} novel={n} />
             ))}
           </div>
         )}
+      </section>
+
+      {/* Latest + Popular ranking */}
+      <div className="grid gap-8 lg:grid-cols-3">
+        <section className="lg:col-span-2">
+          <SectionHeader title="最新更新" href="/novels?sort=updated" more="进入书库" />
+          {latest.length === 0 ? (
+            <p className="text-sm text-stone-500">暂无已发布的小说。</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {latest.map((n) => (
+                <NovelCard key={n.id} novel={n} />
+              ))}
+            </div>
+          )}
+        </section>
+        <section>
+          <SectionHeader title="人气排行榜" />
+          <RankList novels={popular} />
+        </section>
       </div>
 
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">最新作品</h2>
-          <Link href="/novels" className="text-sm text-brand hover:underline">
-            进入书库
-          </Link>
+      {/* Author CTA */}
+      <section className="overflow-hidden rounded-2xl border border-amber-100 bg-gradient-to-r from-amber-50 to-white p-6 sm:flex sm:items-center sm:justify-between">
+        <div>
+          <h2 className="font-serif text-xl font-bold text-stone-900">成为光羽作者</h2>
+          <p className="mt-1 text-sm text-stone-600">在这里发布你的作品，让更多读者看到你的故事。</p>
         </div>
-        {latest.length === 0 ? (
-          <p className="text-sm text-stone-500">暂无已发布的小说。</p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {latest.map((n) => (
-              <NovelCard key={n.id} novel={n} />
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
+        <Link href="/account" className="gy-btn-primary mt-4 sm:mt-0">申请成为作者</Link>
+      </section>
+    </div>
   );
 }

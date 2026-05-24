@@ -5,7 +5,7 @@ import {
   type NovelSerialStatus,
 } from '@guangyu/database';
 import { getNovels, getCategories, type NovelSort } from '@/lib/queries';
-import { NovelCard } from './NovelCard';
+import { PosterCard } from '../components/PosterCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ const SORT_LABELS: Record<NovelSort, string> = {
 };
 
 const inputClass =
-  'rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-brand focus:outline-none';
+  'rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand/40';
 
 export default async function NovelsPage({
   searchParams,
@@ -42,11 +42,14 @@ export default async function NovelsPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">小说书库</h1>
+        <h1 className="font-serif text-2xl font-bold text-stone-900">小说书库</h1>
         {q && <p className="mt-1 text-sm text-stone-500">搜索：「{q}」· {novels.length} 个结果</p>}
       </div>
 
-      <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto]">
+      <form
+        method="get"
+        className="gy-card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto]"
+      >
         <input
           type="text"
           name="q"
@@ -77,12 +80,7 @@ export default async function NovelsPage({
             </option>
           ))}
         </select>
-        <button
-          type="submit"
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
-        >
-          搜索
-        </button>
+        <button type="submit" className="gy-btn-primary">搜索</button>
       </form>
 
       {hasFilters && (
@@ -94,13 +92,13 @@ export default async function NovelsPage({
       )}
 
       {novels.length === 0 ? (
-        <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-12 text-center text-stone-500">
+        <div className="gy-card px-4 py-16 text-center text-stone-500">
           {hasFilters ? '没有符合条件的小说，换个关键词或筛选试试。' : '暂无已发布的小说。'}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
           {novels.map((n) => (
-            <NovelCard key={n.id} novel={n} />
+            <PosterCard key={n.id} novel={n} />
           ))}
         </div>
       )}
