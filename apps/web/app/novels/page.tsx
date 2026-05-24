@@ -13,6 +13,7 @@ export const metadata = { title: '小说' };
 
 const SORT_LABELS: Record<NovelSort, string> = {
   updated: '最近更新',
+  popular: '人气',
   created: '最新发布',
   title: '标题 A-Z',
 };
@@ -23,16 +24,25 @@ const inputClass =
 export default async function NovelsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; status?: string; sort?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    keyword?: string;
+    category?: string;
+    status?: string;
+    sort?: string;
+  }>;
 }) {
   const sp = await searchParams;
-  const q = (sp.q ?? '').trim();
+  // Accept both `q` (existing) and `keyword` (Phase 6e alias).
+  const q = (sp.q ?? sp.keyword ?? '').trim();
   const categories = await getCategories();
   const categorySlug = categories.some((c) => c.slug === sp.category) ? sp.category : undefined;
   const status = (NOVEL_SERIAL_STATUSES as readonly string[]).includes(sp.status ?? '')
     ? (sp.status as NovelSerialStatus)
     : undefined;
-  const sort: NovelSort = (['updated', 'created', 'title'] as const).includes(sp.sort as NovelSort)
+  const sort: NovelSort = (['updated', 'popular', 'created', 'title'] as const).includes(
+    sp.sort as NovelSort,
+  )
     ? (sp.sort as NovelSort)
     : 'updated';
 

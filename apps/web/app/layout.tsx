@@ -57,6 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <nav className="flex flex-1 flex-wrap items-center gap-4 text-sm text-stone-600 sm:gap-6">
               <Link href="/" className="hover:text-brand">首页</Link>
               <Link href="/novels" className="hover:text-brand">小说</Link>
+              <Link href="/rankings" className="hover:text-brand">排行榜</Link>
               <Link href="/categories" className="hover:text-brand">分类</Link>
               <Link href="/authors" className="hover:text-brand">作者</Link>
               {isStaff && (
