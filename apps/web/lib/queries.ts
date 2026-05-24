@@ -71,6 +71,32 @@ export async function getLatestNovels(limit = 8): Promise<NovelListItem[]> {
   return (data ?? []) as unknown as NovelListItem[];
 }
 
+/** Most-viewed published novels (popularity ranking). */
+export async function getPopularNovels(limit = 8): Promise<NovelListItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('novels')
+    .select(NOVEL_LIST_SELECT)
+    .order('view_count', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return (data ?? []) as unknown as NovelListItem[];
+}
+
+/** Featured published novels; falls back to latest when none are flagged. */
+export async function getFeaturedNovels(limit = 6): Promise<NovelListItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('novels')
+    .select(NOVEL_LIST_SELECT)
+    .eq('featured', true)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  const featured = (data ?? []) as unknown as NovelListItem[];
+  if (featured.length > 0) return featured;
+  return getLatestNovels(limit);
+}
+
 export type NovelSort = 'updated' | 'created' | 'title';
 
 export type NovelQueryOptions = {

@@ -42,7 +42,6 @@ export default async function ChapterReaderPage({
   const current = await getChapterContent(novel.id, num);
   if (!current) notFound();
 
-  // Used for prev/next; relies on published chapters being contiguous-ordered, not contiguous-numbered.
   const chapters = await getPublishedChapters(novel.id);
   const idx = chapters.findIndex((c) => c.chapter_number === num);
   const prev = idx > 0 ? chapters[idx - 1] : undefined;
@@ -50,44 +49,60 @@ export default async function ChapterReaderPage({
 
   const session = await getCurrentUser();
 
-  return (
-    <article className="mx-auto max-w-2xl space-y-6">
-      {session && <RecordReading novelId={novel.id} chapterId={current.id} />}
-      <nav className="text-sm text-stone-500">
-        <Link href={`/novels/${novel.slug}`} className="hover:text-brand">
-          {novel.title}
+  const PagedNav = ({ border }: { border?: boolean }) => (
+    <nav
+      className={`flex items-center justify-between gap-3 text-sm ${
+        border ? 'border-t border-stone-200 pt-5' : ''
+      }`}
+    >
+      {prev ? (
+        <Link href={`/novels/${novel.slug}/${prev.chapter_number}`} className="gy-btn-ghost">
+          ← 上一章
         </Link>
+      ) : (
+        <span className="gy-btn-ghost cursor-not-allowed opacity-40">← 上一章</span>
+      )}
+      <Link href={`/novels/${novel.slug}`} className="text-stone-500 hover:text-brand">
+        目录
+      </Link>
+      {next ? (
+        <Link href={`/novels/${novel.slug}/${next.chapter_number}`} className="gy-btn-ghost">
+          下一章 →
+        </Link>
+      ) : (
+        <span className="gy-btn-ghost cursor-not-allowed opacity-40">下一章 →</span>
+      )}
+    </nav>
+  );
+
+  return (
+    <div className="mx-auto max-w-2xl">
+      {session && <RecordReading novelId={novel.id} chapterId={current.id} />}
+
+      <nav className="mb-6 text-sm text-stone-500">
+        <Link href="/novels" className="hover:text-brand">书库</Link>
+        <span className="px-1.5">/</span>
+        <Link href={`/novels/${novel.slug}`} className="hover:text-brand">{novel.title}</Link>
         <span className="px-1.5">/</span>
         <span className="text-stone-700">第 {current.chapter_number} 章</span>
       </nav>
 
-      <header>
-        <h1 className="text-xl font-semibold text-stone-900">{current.title}</h1>
-      </header>
+      <article className="gy-card border-amber-100 bg-[#fdfbf6] px-6 py-8 sm:px-10 sm:py-10">
+        <header className="mb-6 text-center">
+          <h1 className="font-serif text-2xl font-bold text-stone-900">{current.title}</h1>
+          <p className="mt-2 text-xs text-stone-400">
+            {novel.title} · 第 {current.chapter_number} 章
+          </p>
+        </header>
 
-      <div className="whitespace-pre-line text-[15px] leading-8 text-stone-800">
-        {current.content}
+        <div className="whitespace-pre-line font-serif text-[17px] leading-9 tracking-wide text-stone-800">
+          {current.content}
+        </div>
+      </article>
+
+      <div className="mt-6">
+        <PagedNav />
       </div>
-
-      <nav className="flex items-center justify-between border-t border-stone-200 pt-4 text-sm">
-        {prev ? (
-          <Link href={`/novels/${novel.slug}/${prev.chapter_number}`} className="text-brand hover:underline">
-            ← 上一章
-          </Link>
-        ) : (
-          <span className="text-stone-300">← 上一章</span>
-        )}
-        <Link href={`/novels/${novel.slug}`} className="text-stone-600 hover:text-brand">
-          目录
-        </Link>
-        {next ? (
-          <Link href={`/novels/${novel.slug}/${next.chapter_number}`} className="text-brand hover:underline">
-            下一章 →
-          </Link>
-        ) : (
-          <span className="text-stone-300">下一章 →</span>
-        )}
-      </nav>
-    </article>
+    </div>
   );
 }

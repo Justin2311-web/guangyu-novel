@@ -136,6 +136,7 @@ To be configured in Phase 10. Plan: create **two** Vercel projects, both pointin
 - [ ] Phase 5 — Author publishing platform
   - [x] 5a — Author portal (dashboard, novel & chapter management)
   - [x] 5b — Admin review center (approve/reject novels & chapters)
+  - [x] 5c — Reader frontend UI redesign
 - [ ] Phase 6 — Reader frontend polish
 - [ ] Phase 6 — Site settings CMS
 - [ ] Phase 7 — Reader accounts (bookmarks, history)

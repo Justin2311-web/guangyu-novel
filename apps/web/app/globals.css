@@ -12,5 +12,26 @@ body {
 }
 
 body {
-  @apply bg-stone-50 text-stone-900 antialiased;
+  /* Warm "rice-paper" base for an oriental-fantasy feel */
+  @apply bg-amber-50/40 text-stone-900 antialiased;
+}
+
+@layer components {
+  /* Section heading with a gold accent bar */
+  .gy-heading {
+    @apply flex items-center gap-2 text-lg font-semibold text-stone-800;
+  }
+  .gy-heading::before {
+    content: '';
+    @apply h-5 w-1 rounded-full bg-brand;
+  }
+  .gy-card {
+    @apply rounded-xl border border-stone-200 bg-white shadow-sm transition;
+  }
+  .gy-btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-dark disabled:opacity-60;
+  }
+  .gy-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-brand hover:text-brand;
+  }
 }

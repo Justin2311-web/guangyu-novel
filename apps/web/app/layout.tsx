@@ -32,44 +32,53 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const logoUrl = settings['site.logo_url'];
   const socials = SOCIALS.filter((s) => settings[s.key]);
 
+  const isStaff = ['author', 'admin', 'superadmin'].includes(session?.profile?.role ?? '');
+
   return (
     <html lang="zh-CN">
       <body>
-        <header className="border-b border-stone-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-            <Link href="/" className="flex items-center gap-2 text-xl font-semibold text-brand">
+        <header className="sticky top-0 z-30 border-b border-amber-100 bg-white/90 backdrop-blur">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-brand">
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt={siteName} className="h-8 w-auto object-contain" />
               ) : (
-                siteName
+                <>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-dark font-serif text-white">
+                    羽
+                  </span>
+                  <span className="font-serif">{siteName}</span>
+                </>
               )}
             </Link>
-            <nav className="flex items-center gap-6 text-sm text-stone-600">
+            <nav className="flex flex-1 flex-wrap items-center gap-4 text-sm text-stone-600 sm:gap-6">
               <Link href="/" className="hover:text-brand">首页</Link>
               <Link href="/novels" className="hover:text-brand">小说</Link>
               <Link href="/categories" className="hover:text-brand">分类</Link>
+              {isStaff && (
+                <Link href="/author/dashboard" className="hover:text-brand">作者中心</Link>
+              )}
+              <Link href="/bookshelf" className="hover:text-brand">我的书架</Link>
+              <Link href="/account" className="hover:text-brand">我的账户</Link>
+            </nav>
+            <div className="flex items-center gap-3 text-sm">
               {session ? (
                 <>
-                  {['author', 'admin', 'superadmin'].includes(session.profile?.role ?? '') && (
-                    <Link href="/author/dashboard" className="hover:text-brand">作者中心</Link>
-                  )}
-                  <Link href="/bookshelf" className="hover:text-brand">我的书架</Link>
-                  <Link href="/account" className="hover:text-brand">我的账户</Link>
-                  <span className="text-stone-500">
+                  <span className="hidden text-stone-500 sm:inline">
                     {session.profile?.display_name ?? session.user.email}
                   </span>
                   <form action="/logout" method="post">
-                    <button className="hover:text-brand" type="submit">登出</button>
+                    <button className="text-stone-500 hover:text-brand" type="submit">登出</button>
                   </form>
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="hover:text-brand">登录</Link>
-                  <Link href="/register" className="hover:text-brand">注册</Link>
+                  <Link href="/login" className="text-stone-600 hover:text-brand">登录</Link>
+                  <Link href="/register" className="gy-btn-primary !px-3 !py-1.5">注册</Link>
                 </>
               )}
-            </nav>
+            </div>
           </div>
         </header>
         <main className="mx-auto min-h-[calc(100vh-8rem)] max-w-6xl px-4 py-8">{children}</main>
