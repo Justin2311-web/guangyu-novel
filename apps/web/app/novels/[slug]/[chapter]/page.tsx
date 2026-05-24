@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { getCurrentUser } from '@/lib/supabase/server';
 import { getNovelBySlug, getPublishedChapters, getChapterContent } from '@/lib/queries';
 import { RecordReading } from './RecordReading';
+import { ChapterReader } from './ChapterReader';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,32 +50,6 @@ export default async function ChapterReaderPage({
 
   const session = await getCurrentUser();
 
-  const PagedNav = ({ border }: { border?: boolean }) => (
-    <nav
-      className={`flex items-center justify-between gap-3 text-sm ${
-        border ? 'border-t border-stone-200 pt-5' : ''
-      }`}
-    >
-      {prev ? (
-        <Link href={`/novels/${novel.slug}/${prev.chapter_number}`} className="gy-btn-ghost">
-          ← 上一章
-        </Link>
-      ) : (
-        <span className="gy-btn-ghost cursor-not-allowed opacity-40">← 上一章</span>
-      )}
-      <Link href={`/novels/${novel.slug}`} className="text-stone-500 hover:text-brand">
-        目录
-      </Link>
-      {next ? (
-        <Link href={`/novels/${novel.slug}/${next.chapter_number}`} className="gy-btn-ghost">
-          下一章 →
-        </Link>
-      ) : (
-        <span className="gy-btn-ghost cursor-not-allowed opacity-40">下一章 →</span>
-      )}
-    </nav>
-  );
-
   return (
     <div className="mx-auto max-w-2xl">
       {session && <RecordReading novelId={novel.id} chapterId={current.id} />}
@@ -87,22 +62,15 @@ export default async function ChapterReaderPage({
         <span className="text-stone-700">第 {current.chapter_number} 章</span>
       </nav>
 
-      <article className="gy-card border-amber-100 bg-[#fdfbf6] px-6 py-8 sm:px-10 sm:py-10">
-        <header className="mb-6 text-center">
-          <h1 className="font-serif text-2xl font-bold text-stone-900">{current.title}</h1>
-          <p className="mt-2 text-xs text-stone-400">
-            {novel.title} · 第 {current.chapter_number} 章
-          </p>
-        </header>
-
-        <div className="whitespace-pre-line font-serif text-[17px] leading-9 tracking-wide text-stone-800">
-          {current.content}
-        </div>
-      </article>
-
-      <div className="mt-6">
-        <PagedNav />
-      </div>
+      <ChapterReader
+        title={current.title}
+        content={current.content}
+        novelTitle={novel.title}
+        novelSlug={novel.slug}
+        chapterNumber={current.chapter_number}
+        prev={prev ? { chapter_number: prev.chapter_number } : null}
+        next={next ? { chapter_number: next.chapter_number } : null}
+      />
     </div>
   );
 }
