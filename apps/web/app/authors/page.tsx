@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getPublicAuthors } from '@/lib/queries';
 import { AuthorAvatar } from '../components/AuthorAvatar';
+import { AuthorLevelBadge } from '../components/AuthorLevelBadge';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,9 +12,14 @@ export default async function AuthorsDirectoryPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-2xl font-bold text-stone-900">作者列表</h1>
-        <p className="mt-1 text-sm text-stone-500">共 {authors.length} 位作者</p>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h1 className="font-serif text-2xl font-bold text-stone-900">作者列表</h1>
+          <p className="mt-1 text-sm text-stone-500">共 {authors.length} 位作者</p>
+        </div>
+        <Link href="/authors/ranking" className="text-sm text-stone-500 hover:text-brand">
+          作者排行榜 →
+        </Link>
       </div>
 
       {authors.length === 0 ? (
@@ -28,9 +34,12 @@ export default async function AuthorsDirectoryPage() {
             >
               <AuthorAvatar src={a.avatarUrl} name={a.penName} size="md" />
               <div className="min-w-0 flex-1">
-                <h3 className="truncate font-serif text-base font-semibold text-stone-800">
-                  {a.penName}
-                </h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="truncate font-serif text-base font-semibold text-stone-800">
+                    {a.penName}
+                  </h3>
+                  <AuthorLevelBadge totalViews={a.totalViews} />
+                </div>
                 <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-stone-500">
                   {a.bio?.trim() || '这位作者还没有填写简介。'}
                 </p>
