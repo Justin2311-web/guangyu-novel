@@ -56,6 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/" className="hover:text-brand">首页</Link>
               <Link href="/novels" className="hover:text-brand">小说</Link>
               <Link href="/categories" className="hover:text-brand">分类</Link>
+              <Link href="/authors" className="hover:text-brand">作者</Link>
               {isStaff && (
                 <Link href="/author/dashboard" className="hover:text-brand">作者中心</Link>
               )}

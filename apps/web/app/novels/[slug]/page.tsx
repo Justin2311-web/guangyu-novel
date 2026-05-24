@@ -69,7 +69,16 @@ export default async function NovelDetailPage({
           <div className="flex-1 space-y-3">
             <h1 className="font-serif text-2xl font-bold text-stone-900">{novel.title}</h1>
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-stone-600">{novel.authors?.pen_name ?? '佚名'}</span>
+              {novel.authors?.slug ? (
+                <Link
+                  href={`/authors/${encodeURIComponent(novel.authors.slug)}`}
+                  className="text-brand-dark hover:text-brand hover:underline"
+                >
+                  {novel.authors.pen_name}
+                </Link>
+              ) : (
+                <span className="text-stone-600">{novel.authors?.pen_name ?? '佚名'}</span>
+              )}
               {novel.categories ? (
                 <Link
                   href={`/novels?category=${encodeURIComponent(novel.categories.slug)}`}

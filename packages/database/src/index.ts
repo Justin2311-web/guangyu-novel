@@ -90,6 +90,7 @@ export interface Profile {
 export interface Author {
   id: string;
   profile_id: string;
+  slug: string | null;
   pen_name: string;
   bio: string | null;
   status: 'active' | 'suspended';
