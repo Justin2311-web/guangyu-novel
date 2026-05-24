@@ -162,14 +162,20 @@ export type PublicAuthorListItem = {
   avatarUrl: string | null;
   createdAt: string;
   novelCount: number;
+  totalViews: number;
 };
 
-/** Active authors for the public directory, most prolific first. */
+/**
+ * Active authors for the public directory / ranking, ordered by total views
+ * (most-read first). The embedded novels(view_count) respects the novels RLS,
+ * so only *published* novels contribute to the count and view total for
+ * anonymous visitors.
+ */
 export async function getPublicAuthors(): Promise<PublicAuthorListItem[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('authors')
-    .select('id, slug, pen_name, bio, avatar_url, created_at, status, novels(count)')
+    .select('id, slug, pen_name, bio, avatar_url, created_at, status, novels(view_count)')
     .eq('status', 'active');
 
   type Row = {
@@ -179,21 +185,30 @@ export async function getPublicAuthors(): Promise<PublicAuthorListItem[]> {
     bio: string | null;
     avatar_url: string | null;
     created_at: string;
-    novels: { count: number }[] | null;
+    novels: { view_count: number | null }[] | null;
   };
 
   return ((data ?? []) as unknown as Row[])
     .filter((r) => r.slug)
-    .map((r) => ({
-      id: r.id,
-      slug: r.slug as string,
-      penName: r.pen_name,
-      bio: r.bio,
-      avatarUrl: r.avatar_url,
-      createdAt: r.created_at,
-      novelCount: r.novels?.[0]?.count ?? 0,
-    }))
-    .sort((a, b) => b.novelCount - a.novelCount || a.createdAt.localeCompare(b.createdAt));
+    .map((r) => {
+      const novels = r.novels ?? [];
+      return {
+        id: r.id,
+        slug: r.slug as string,
+        penName: r.pen_name,
+        bio: r.bio,
+        avatarUrl: r.avatar_url,
+        createdAt: r.created_at,
+        novelCount: novels.length,
+        totalViews: novels.reduce((sum, n) => sum + (n.view_count ?? 0), 0),
+      };
+    })
+    .sort((a, b) => b.totalViews - a.totalViews || b.novelCount - a.novelCount);
+}
+
+/** Top authors by total views (homepage hot-authors section). */
+export async function getTopAuthors(limit = 6): Promise<PublicAuthorListItem[]> {
+  return (await getPublicAuthors()).slice(0, limit);
 }
 
 export type PublicAuthorDetail = {

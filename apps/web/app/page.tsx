@@ -8,6 +8,7 @@ import {
   getPopularNovels,
   getReadingList,
   getSiteSettings,
+  getTopAuthors,
   type NovelListItem,
 } from '@/lib/queries';
 import { NovelCard } from './novels/NovelCard';
@@ -16,6 +17,8 @@ import { SectionHeader } from './components/SectionHeader';
 import { PosterCard } from './components/PosterCard';
 import { CategoryGrid } from './components/CategoryGrid';
 import { RankList } from './components/RankList';
+import { AuthorAvatar } from './components/AuthorAvatar';
+import { AuthorLevelBadge } from './components/AuthorLevelBadge';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,15 +61,17 @@ function FeaturedHero({ novel }: { novel: NovelListItem }) {
 }
 
 export default async function HomePage() {
-  const [banners, categories, featured, latest, popular, settings, session] = await Promise.all([
-    getActiveBanners(),
-    getCategories(),
-    getFeaturedNovels(6),
-    getLatestNovels(6),
-    getPopularNovels(8),
-    getSiteSettings(),
-    getCurrentUser(),
-  ]);
+  const [banners, categories, featured, latest, popular, topAuthors, settings, session] =
+    await Promise.all([
+      getActiveBanners(),
+      getCategories(),
+      getFeaturedNovels(6),
+      getLatestNovels(6),
+      getPopularNovels(8),
+      getTopAuthors(6),
+      getSiteSettings(),
+      getCurrentUser(),
+    ]);
   const recentlyRead = session ? await getReadingList(4) : [];
 
   return (
@@ -162,6 +167,33 @@ export default async function HomePage() {
           <RankList novels={popular} />
         </section>
       </div>
+
+      {/* Hot authors */}
+      {topAuthors.length > 0 && (
+        <section>
+          <SectionHeader title="热门作者" href="/authors/ranking" more="作者排行榜" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {topAuthors.map((a) => (
+              <Link
+                key={a.id}
+                href={`/authors/${encodeURIComponent(a.slug)}`}
+                className="gy-card flex items-center gap-3 p-4 transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <AuthorAvatar src={a.avatarUrl} name={a.penName} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="truncate font-medium text-stone-800">{a.penName}</span>
+                    <AuthorLevelBadge totalViews={a.totalViews} />
+                  </div>
+                  <div className="mt-0.5 text-xs text-stone-400">
+                    {a.novelCount} 部作品 · {a.totalViews.toLocaleString()} 阅读
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Author CTA */}
       <section className="overflow-hidden rounded-2xl border border-amber-100 bg-gradient-to-r from-amber-50 to-white p-6 sm:flex sm:items-center sm:justify-between">

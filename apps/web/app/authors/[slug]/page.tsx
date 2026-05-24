@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getPublicAuthorBySlug, getAuthorPublicData } from '@/lib/queries';
 import { AuthorAvatar } from '../../components/AuthorAvatar';
+import { AuthorLevelBadge } from '../../components/AuthorLevelBadge';
 import { PosterCard } from '../../components/PosterCard';
 import { SectionHeader } from '../../components/SectionHeader';
 
@@ -55,7 +56,10 @@ export default async function AuthorPublicPage({
         <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
           <AuthorAvatar src={author.avatarUrl} name={author.penName} size="lg" />
           <div className="flex-1 space-y-2">
-            <h1 className="font-serif text-2xl font-bold text-stone-900">{author.penName}</h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="font-serif text-2xl font-bold text-stone-900">{author.penName}</h1>
+              <AuthorLevelBadge totalViews={stats.totalViews} />
+            </div>
             <p className="text-xs text-stone-400">加入于 {author.createdAt.slice(0, 10)}</p>
             <p className="max-w-2xl whitespace-pre-line text-sm leading-relaxed text-stone-600">
               {author.bio?.trim() || '这位作者还没有填写简介。'}
@@ -73,7 +77,7 @@ export default async function AuthorPublicPage({
 
       {/* Novels */}
       <section>
-        <SectionHeader title="作品列表" />
+        <SectionHeader title="最近更新作品" />
         {novels.length === 0 ? (
           <div className="gy-card px-4 py-12 text-center text-sm text-stone-500">
             这位作者还没有已发布的作品。

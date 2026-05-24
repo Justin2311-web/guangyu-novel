@@ -153,6 +153,81 @@ export async function getMyChapter(novelIds: string[], id: string): Promise<MyCh
   return (data as unknown as MyChapter) ?? null;
 }
 
+export type AuthorAnalytics = {
+  totalNovels: number;
+  publishedNovels: number;
+  totalChapters: number;
+  totalWords: number;
+  totalViews: number;
+  /** Null when the analytics RPC (migration 0011) is not yet applied. */
+  bookshelfSaves: number | null;
+  viewsLast7Days: number | null;
+};
+
+/**
+ * Author Center analytics for a single author. Public/own data (novels,
+ * chapters, words, views) is read directly. Bookshelf saves and last-7-day
+ * reads cross other users' rows that are blocked by the owner-only RLS on
+ * bookmarks / reading_history, so they come from an additive SECURITY DEFINER
+ * RPC (public.author_dashboard_metrics). If that RPC is not yet deployed the
+ * two fields fall back to null and the UI shows a placeholder.
+ */
+export async function getAuthorAnalytics(authorId: string): Promise<AuthorAnalytics> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: novelRows } = await supabase
+    .from('novels')
+    .select('id, is_published, review_status, view_count')
+    .eq('author_id', authorId);
+  type NovelRow = {
+    id: string;
+    is_published: boolean | null;
+    review_status: string | null;
+    view_count: number | null;
+  };
+  const novels = (novelRows ?? []) as NovelRow[];
+  const totalViews = novels.reduce((sum, n) => sum + (n.view_count ?? 0), 0);
+  const publishedNovels = novels.filter(
+    (n) => n.is_published || n.review_status === 'published',
+  ).length;
+
+  let totalChapters = 0;
+  let totalWords = 0;
+  const novelIds = novels.map((n) => n.id);
+  if (novelIds.length > 0) {
+    const { data: chapterRows } = await supabase
+      .from('chapters')
+      .select('content')
+      .in('novel_id', novelIds);
+    const chapters = (chapterRows ?? []) as { content: string | null }[];
+    totalChapters = chapters.length;
+    totalWords = chapters.reduce((sum, c) => sum + (c.content?.replace(/\s/g, '').length ?? 0), 0);
+  }
+
+  let bookshelfSaves: number | null = null;
+  let viewsLast7Days: number | null = null;
+  const { data: metrics, error } = await supabase.rpc('author_dashboard_metrics');
+  if (!error && metrics) {
+    const m = (Array.isArray(metrics) ? metrics[0] : metrics) as
+      | { bookshelf_saves?: number; views_last_7_days?: number }
+      | undefined;
+    if (m) {
+      bookshelfSaves = Number(m.bookshelf_saves ?? 0);
+      viewsLast7Days = Number(m.views_last_7_days ?? 0);
+    }
+  }
+
+  return {
+    totalNovels: novels.length,
+    publishedNovels,
+    totalChapters,
+    totalWords,
+    totalViews,
+    bookshelfSaves,
+    viewsLast7Days,
+  };
+}
+
 export type AuthorStats = {
   totalNovels: number;
   publishedNovels: number;
