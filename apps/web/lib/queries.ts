@@ -282,6 +282,57 @@ export async function getAuthorPublicData(
   };
 }
 
+// =====================================================================
+// Phase 6c — novel comments (RLS: "comments: public read visible" returns
+// only status = 'visible' rows, so anonymous + logged-in callers alike see
+// the public list; counts use the same gated read).
+// =====================================================================
+
+export type NovelComment = {
+  id: string;
+  userId: string;
+  displayName: string;
+  content: string;
+  createdAt: string;
+};
+
+/** Visible comments for a novel, newest first. */
+export async function getNovelComments(novelId: string): Promise<NovelComment[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('comments')
+    .select('id, user_id, user_display_name, content, created_at, status')
+    .eq('novel_id', novelId)
+    .eq('status', 'visible')
+    .order('created_at', { ascending: false });
+
+  type Row = {
+    id: string;
+    user_id: string;
+    user_display_name: string | null;
+    content: string;
+    created_at: string;
+  };
+  return ((data ?? []) as Row[]).map((r) => ({
+    id: r.id,
+    userId: r.user_id,
+    displayName: r.user_display_name?.trim() || '读者',
+    content: r.content,
+    createdAt: r.created_at,
+  }));
+}
+
+/** Count of visible comments for a novel (lightweight; no denormalized column). */
+export async function getNovelCommentCount(novelId: string): Promise<number> {
+  const supabase = await createSupabaseServerClient();
+  const { count } = await supabase
+    .from('comments')
+    .select('id', { count: 'exact', head: true })
+    .eq('novel_id', novelId)
+    .eq('status', 'visible');
+  return count ?? 0;
+}
+
 export type NovelDetail = NovelListItem & { description: string | null };
 
 /** Route params for non-ASCII slugs arrive percent-encoded; decode before matching. */

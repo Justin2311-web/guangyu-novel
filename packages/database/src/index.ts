@@ -146,6 +146,30 @@ export interface Category {
   created_at: string;
 }
 
+export type CommentStatus = 'visible' | 'hidden' | 'deleted';
+
+export const COMMENT_STATUSES: readonly CommentStatus[] = ['visible', 'hidden', 'deleted'];
+
+export const COMMENT_STATUS_LABELS: Record<CommentStatus, string> = {
+  visible: '显示中',
+  hidden: '已隐藏',
+  deleted: '已删除',
+};
+
+export const COMMENT_MIN_LENGTH = 2;
+export const COMMENT_MAX_LENGTH = 500;
+
+export interface Comment {
+  id: string;
+  novel_id: string;
+  user_id: string;
+  user_display_name: string | null;
+  content: string;
+  status: CommentStatus;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Novel {
   id: string;
   author_id: string;

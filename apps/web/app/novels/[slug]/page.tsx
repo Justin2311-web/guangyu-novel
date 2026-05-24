@@ -8,9 +8,12 @@ import {
   getPublishedChapters,
   getReadingProgressForNovel,
   getNovels,
+  getNovelComments,
+  getNovelCommentCount,
   isBookmarked,
 } from '@/lib/queries';
 import { BookmarkButton } from './BookmarkButton';
+import { CommentSection } from './CommentSection';
 import { SectionHeader } from '../../components/SectionHeader';
 import { PosterCard } from '../../components/PosterCard';
 
@@ -44,6 +47,11 @@ export default async function NovelDetailPage({
   const [progress, bookmarked] = isLoggedIn
     ? await Promise.all([getReadingProgressForNovel(novel.id), isBookmarked(novel.id)])
     : [null, false];
+
+  const [comments, commentCount] = await Promise.all([
+    getNovelComments(novel.id),
+    getNovelCommentCount(novel.id),
+  ]);
 
   const related = novel.categories?.slug
     ? (await getNovels({ categorySlug: novel.categories.slug }))
@@ -164,6 +172,16 @@ export default async function NovelDetailPage({
           </ul>
         )}
       </section>
+
+      {/* Comments */}
+      <CommentSection
+        novelId={novel.id}
+        novelSlug={novel.slug}
+        comments={comments}
+        count={commentCount}
+        isLoggedIn={isLoggedIn}
+        currentUserId={session?.user.id ?? null}
+      />
 
       {/* Related */}
       {related.length > 0 && (
