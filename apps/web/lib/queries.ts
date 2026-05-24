@@ -97,7 +97,7 @@ export async function getFeaturedNovels(limit = 6): Promise<NovelListItem[]> {
   return getLatestNovels(limit);
 }
 
-export type NovelSort = 'updated' | 'created' | 'title';
+export type NovelSort = 'updated' | 'created' | 'title' | 'popular';
 
 export type NovelQueryOptions = {
   q?: string;
@@ -125,6 +125,7 @@ export async function getNovels(options: NovelQueryOptions = {}): Promise<NovelL
 
   if (sort === 'title') query = query.order('title', { ascending: true });
   else if (sort === 'created') query = query.order('created_at', { ascending: false });
+  else if (sort === 'popular') query = query.order('view_count', { ascending: false });
   else query = query.order('updated_at', { ascending: false });
 
   const { data } = await query;
@@ -280,6 +281,97 @@ export async function getAuthorPublicData(
     novels: rows as NovelListItem[],
     stats: { totalNovels: rows.length, totalChapters, totalViews },
   };
+}
+
+// =====================================================================
+// Phase 6e — novel discovery / rankings
+// =====================================================================
+
+export type RankingKind = 'popular' | 'latest' | 'collections' | 'finished' | 'new';
+
+export type RankingNovel = NovelListItem & {
+  viewCount: number;
+  chapterCount: number;
+  bookmarkCount: number | null;
+};
+
+const RANKING_SELECT =
+  'id, slug, title, description, cover_image_url, status, view_count, created_at, updated_at, authors(pen_name, slug), categories(name, slug)';
+
+/** novelId -> published chapter count, for the novels in `ids`. */
+async function publishedChapterCounts(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  ids: string[],
+): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  if (ids.length === 0) return map;
+  const { data } = await supabase
+    .from('chapters')
+    .select('novel_id')
+    .in('novel_id', ids)
+    .eq('status', 'published');
+  for (const r of (data ?? []) as { novel_id: string }[]) {
+    map.set(r.novel_id, (map.get(r.novel_id) ?? 0) + 1);
+  }
+  return map;
+}
+
+type RawRankingRow = NovelListItem & { view_count: number | null };
+
+function toRankingNovel(
+  r: RawRankingRow,
+  chapterCounts: Map<string, number>,
+  bookmarkCount: number | null,
+): RankingNovel {
+  return {
+    ...r,
+    viewCount: r.view_count ?? 0,
+    chapterCount: chapterCounts.get(r.id) ?? 0,
+    bookmarkCount,
+  };
+}
+
+/**
+ * Ranked published novels for the discovery pages. RLS gates every read to
+ * is_published = true. The collection ranking pulls counts-only aggregates
+ * from the additive `novel_bookmark_counts` RPC (no reader identities).
+ */
+export async function getRanking(kind: RankingKind, limit = 50): Promise<RankingNovel[]> {
+  const supabase = await createSupabaseServerClient();
+
+  if (kind === 'collections') {
+    const { data: counts } = await supabase.rpc('novel_bookmark_counts');
+    const rows = ((counts ?? []) as { novel_id: string; bookmark_count: number }[])
+      .sort((a, b) => b.bookmark_count - a.bookmark_count)
+      .slice(0, limit);
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.novel_id);
+    const countMap = new Map(ids.map((id, i) => [id, rows[i]!.bookmark_count]));
+
+    const { data } = await supabase.from('novels').select(RANKING_SELECT).in('id', ids);
+    const novels = (data ?? []) as unknown as RawRankingRow[];
+    const chapterCounts = await publishedChapterCounts(supabase, novels.map((n) => n.id));
+    return novels
+      .map((r) => toRankingNovel(r, chapterCounts, countMap.get(r.id) ?? 0))
+      .sort((a, b) => (b.bookmarkCount ?? 0) - (a.bookmarkCount ?? 0));
+  }
+
+  let query = supabase.from('novels').select(RANKING_SELECT);
+  if (kind === 'finished') query = query.eq('status', 'completed');
+
+  if (kind === 'popular' || kind === 'finished') {
+    query = query.order('view_count', { ascending: false });
+  } else if (kind === 'new') {
+    query = query.order('created_at', { ascending: false });
+  } else {
+    query = query.order('updated_at', { ascending: false }); // latest
+  }
+  query = query.limit(limit);
+
+  const { data } = await query;
+  const novels = (data ?? []) as unknown as RawRankingRow[];
+  const chapterCounts = await publishedChapterCounts(supabase, novels.map((n) => n.id));
+  return novels.map((r) => toRankingNovel(r, chapterCounts, null));
 }
 
 // =====================================================================

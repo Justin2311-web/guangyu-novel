@@ -22,7 +22,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
       {categories.map((c) => (
         <Link
           key={c.id}
-          href={`/novels?category=${encodeURIComponent(c.slug)}`}
+          href={`/categories/${encodeURIComponent(c.slug)}`}
           className="flex flex-col items-center gap-1.5 rounded-xl border border-stone-200 bg-white py-4 text-center transition hover:-translate-y-0.5 hover:border-brand hover:shadow-sm"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-xl">

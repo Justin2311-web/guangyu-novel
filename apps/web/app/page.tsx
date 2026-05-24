@@ -9,8 +9,10 @@ import {
   getReadingList,
   getSiteSettings,
   getTopAuthors,
+  getRanking,
   type NovelListItem,
 } from '@/lib/queries';
+import { RANKINGS } from './rankings/meta';
 import { NovelCard } from './novels/NovelCard';
 import { HomeBanners } from './HomeBanners';
 import { SectionHeader } from './components/SectionHeader';
@@ -61,13 +63,14 @@ function FeaturedHero({ novel }: { novel: NovelListItem }) {
 }
 
 export default async function HomePage() {
-  const [banners, categories, featured, latest, popular, topAuthors, settings, session] =
+  const [banners, categories, featured, latest, popular, newBooks, topAuthors, settings, session] =
     await Promise.all([
       getActiveBanners(),
       getCategories(),
       getFeaturedNovels(6),
       getLatestNovels(6),
       getPopularNovels(8),
+      getRanking('new', 6),
       getTopAuthors(6),
       getSiteSettings(),
       getCurrentUser(),
@@ -128,6 +131,23 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Rankings entry */}
+      <section>
+        <SectionHeader title="排行榜" href="/rankings" more="全部榜单" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {RANKINGS.map((r) => (
+            <Link
+              key={r.slug}
+              href={`/rankings/${r.slug}`}
+              className="gy-card flex items-center gap-3 px-4 py-3 transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <span className="text-xl">{r.icon}</span>
+              <span className="text-sm font-medium text-stone-700">{r.title}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* Categories */}
       <section>
         <SectionHeader title="分类" href="/categories" />
@@ -147,6 +167,18 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      {/* New books */}
+      {newBooks.length > 0 && (
+        <section>
+          <SectionHeader title="新书推荐" href="/rankings/new" more="新书榜" />
+          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+            {newBooks.map((n) => (
+              <PosterCard key={n.id} novel={n} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Latest + Popular ranking */}
       <div className="grid gap-8 lg:grid-cols-3">

@@ -18,7 +18,7 @@ export default async function CategoriesPage() {
           {categories.map((c) => (
             <Link
               key={c.id}
-              href={`/novels?category=${encodeURIComponent(c.slug)}`}
+              href={`/categories/${encodeURIComponent(c.slug)}`}
               className="rounded-xl border border-stone-200 bg-white p-5 transition hover:border-brand"
             >
               <h2 className="text-lg font-medium text-stone-800">{c.name}</h2>
