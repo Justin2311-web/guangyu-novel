@@ -5,7 +5,11 @@ import { AuthorLevelBadge } from '../../components/AuthorLevelBadge';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: '作者排行榜' };
+export const metadata = {
+  title: '作者排行榜',
+  description: '光羽小说作者排行榜，按作品总阅读量排名，发现高人气作者。',
+  alternates: { canonical: '/authors/ranking' },
+};
 
 const RANK_COLOR: Record<number, string> = {
   1: 'bg-amber-400 text-white',

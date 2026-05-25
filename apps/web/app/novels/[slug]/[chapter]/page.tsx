@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/supabase/server';
 import { getNovelBySlug, getPublishedChapters, getChapterContent } from '@/lib/queries';
 import { RecordReading } from './RecordReading';
 import { ChapterReader } from './ChapterReader';
+import { SITE_NAME, clampText } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,12 +21,31 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug, chapter } = await params;
   const num = parseChapterNumber(chapter);
-  if (num === null) return { title: '未找到' };
+  if (num === null) return { title: '未找到', robots: { index: false, follow: false } };
   const novel = await getNovelBySlug(slug);
-  if (!novel) return { title: '未找到' };
+  if (!novel) return { title: '未找到', robots: { index: false, follow: false } };
   const current = await getChapterContent(novel.id, num);
-  if (!current) return { title: '未找到' };
-  return { title: `${current.title} - ${novel.title}` };
+  if (!current) return { title: '未找到', robots: { index: false, follow: false } };
+
+  const canonical = `/novels/${encodeURIComponent(novel.slug)}/${current.chapter_number}`;
+  const title = `${current.title} - ${novel.title}`;
+  const description =
+    clampText(current.content) ?? `${novel.title} 第${current.chapter_number}章 ${current.title}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    // Published chapters are public reading content → allow indexing.
+    robots: { index: true, follow: true },
+    openGraph: {
+      type: 'article',
+      title: `${title} - ${SITE_NAME}`,
+      description,
+      url: canonical,
+    },
+    twitter: { card: 'summary', title: `${title} - ${SITE_NAME}`, description },
+  };
 }
 
 export default async function ChapterReaderPage({

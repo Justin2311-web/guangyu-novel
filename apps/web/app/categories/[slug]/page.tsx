@@ -20,7 +20,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const cat = (await getCategories()).find((c) => c.slug === decodeURIComponent(slug));
-  return { title: cat ? cat.name : '分类' };
+  if (!cat) return { title: '分类', robots: { index: false, follow: false } };
+  return {
+    title: `${cat.name}小说`,
+    description: cat.description?.trim() || `浏览光羽小说「${cat.name}」分类下的全部作品。`,
+    alternates: { canonical: `/categories/${encodeURIComponent(cat.slug)}` },
+  };
 }
 
 export default async function CategoryDetailPage({

@@ -3,19 +3,41 @@ import Link from 'next/link';
 import { getCurrentUser } from '@/lib/supabase/server';
 import { getSiteSettings } from '@/lib/queries';
 import { getUnreadNotificationCount } from '@/lib/notifications';
+import { SITE_URL, SITE_NAME, DEFAULT_TITLE, DEFAULT_DESCRIPTION } from '@/lib/site';
 import './globals.css';
 
 export async function generateMetadata(): Promise<Metadata> {
   const s = await getSiteSettings();
-  const name = s['site.name'] || '光羽小说';
+  const name = s['site.name'] || SITE_NAME;
+  const defaultTitle = s['seo.meta_title'] || DEFAULT_TITLE;
+  const description = s['seo.meta_description'] || s['site.description'] || DEFAULT_DESCRIPTION;
   return {
+    metadataBase: new URL(SITE_URL),
     title: {
-      default: s['seo.meta_title'] || name,
+      default: defaultTitle,
       template: `%s | ${name}`,
     },
-    description: s['seo.meta_description'] || s['site.description'] || undefined,
-    keywords: s['seo.meta_keywords'] ? s['seo.meta_keywords'].split(',').map((k) => k.trim()) : undefined,
+    description,
+    applicationName: name,
+    keywords: s['seo.meta_keywords']
+      ? s['seo.meta_keywords'].split(',').map((k) => k.trim())
+      : ['小说', '在线阅读', '玄幻', '都市', '仙侠', '免费小说'],
+    alternates: { canonical: '/' },
+    robots: { index: true, follow: true },
     icons: s['site.favicon_url'] ? { icon: s['site.favicon_url'] } : undefined,
+    openGraph: {
+      type: 'website',
+      siteName: name,
+      title: defaultTitle,
+      description,
+      url: SITE_URL,
+      locale: 'zh_CN',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: defaultTitle,
+      description,
+    },
   };
 }
 
