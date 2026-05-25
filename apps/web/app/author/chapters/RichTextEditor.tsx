@@ -52,9 +52,11 @@ const GROUPS: Cmd[][] = [
 export function RichTextEditor({
   name,
   defaultValue,
+  onChange,
 }: {
   name: string;
   defaultValue?: string | null;
+  onChange?: (html: string) => void;
 }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [html, setHtml] = useState(defaultValue ?? '');
@@ -72,6 +74,7 @@ export function RichTextEditor({
     if (editorRef.current) {
       editorRef.current.innerHTML = toInitialHtml(defaultValue ?? '');
       setHtml(editorRef.current.innerHTML);
+      onChange?.(editorRef.current.innerHTML);
       recount();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -80,6 +83,7 @@ export function RichTextEditor({
   function sync() {
     if (!editorRef.current) return;
     setHtml(editorRef.current.innerHTML);
+    onChange?.(editorRef.current.innerHTML);
     recount();
   }
 

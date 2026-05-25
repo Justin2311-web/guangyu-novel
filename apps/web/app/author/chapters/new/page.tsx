@@ -19,7 +19,13 @@ export default async function NewChapterPage({
     <div className="space-y-5">
       <h2 className="text-lg font-medium">新增章节</h2>
       <p className="text-sm text-stone-500">章节默认不公开，提交审核后由管理员发布。</p>
-      <ChapterForm action={createChapterAction} novels={novels} lockNovel={false} defaults={{ novel_id: novel }} />
+      <ChapterForm
+        action={createChapterAction}
+        novels={novels}
+        lockNovel={false}
+        defaults={{ novel_id: novel }}
+        draftKey={`ch:new:${author.id}${novel ? `:${novel}` : ''}`}
+      />
     </div>
   );
 }

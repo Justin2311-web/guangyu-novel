@@ -37,6 +37,7 @@ export default async function EditChapterPage({ params }: { params: Promise<{ id
           title: chapter.title,
           content: chapter.content,
         }}
+        draftKey={`ch:${author.id}:${chapter.id}`}
       />
     </div>
   );

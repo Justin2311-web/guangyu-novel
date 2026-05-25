@@ -38,6 +38,7 @@ export default async function EditNovelPage({ params }: { params: Promise<{ id: 
           category_id: novel.category_id,
           status: novel.status,
         }}
+        draftKey={`nv:${author.id}:${novel.id}`}
       />
     </div>
   );
