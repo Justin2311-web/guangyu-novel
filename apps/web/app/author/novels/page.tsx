@@ -44,6 +44,7 @@ export default async function AuthorNovelsPage() {
                 <th className="px-4 py-3 font-medium">分类</th>
                 <th className="px-4 py-3 font-medium">连载</th>
                 <th className="px-4 py-3 font-medium">审核状态</th>
+                <th className="px-4 py-3 font-medium">更新时间</th>
                 <th className="px-4 py-3 font-medium">操作</th>
               </tr>
             </thead>
@@ -67,8 +68,9 @@ export default async function AuthorNovelsPage() {
                         </div>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-stone-500">{n.updated_at.slice(0, 10)}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                         <Link href={`/author/novels/${n.id}/edit`} className="text-brand hover:underline">
                           编辑
                         </Link>
@@ -78,6 +80,21 @@ export default async function AuthorNovelsPage() {
                         >
                           章节
                         </Link>
+                        <Link
+                          href={`/author/chapters/new?novel=${n.id}`}
+                          className="text-stone-600 hover:text-brand"
+                        >
+                          新增章节
+                        </Link>
+                        {(n.is_published || n.review_status === 'published') && (
+                          <Link
+                            href={`/novels/${encodeURIComponent(n.slug)}`}
+                            target="_blank"
+                            className="text-stone-600 hover:text-brand"
+                          >
+                            查看前台
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>

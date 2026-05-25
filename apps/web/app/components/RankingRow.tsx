@@ -74,6 +74,12 @@ export function RankingRow({
             开始阅读 →
           </Link>
         </div>
+        {novel.latestChapter && (
+          <p className="mt-1 truncate text-xs text-stone-500">
+            最新 第{novel.latestChapter.chapterNumber}章 {novel.latestChapter.title}
+            <span className="ml-1 text-stone-400">· {novel.latestChapter.updatedAt.slice(0, 10)}</span>
+          </p>
+        )}
       </div>
     </li>
   );

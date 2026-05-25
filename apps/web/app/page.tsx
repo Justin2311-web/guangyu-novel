@@ -4,12 +4,12 @@ import {
   getActiveBanners,
   getCategories,
   getFeaturedNovels,
-  getLatestNovels,
   getPopularNovels,
   getReadingList,
   getSiteSettings,
   getTopAuthors,
   getRanking,
+  getLatestUpdatedNovels,
   type NovelListItem,
 } from '@/lib/queries';
 import { RANKINGS } from './rankings/meta';
@@ -68,7 +68,7 @@ export default async function HomePage() {
       getActiveBanners(),
       getCategories(),
       getFeaturedNovels(6),
-      getLatestNovels(6),
+      getLatestUpdatedNovels(6),
       getPopularNovels(8),
       getRanking('new', 6),
       getTopAuthors(6),
@@ -189,7 +189,7 @@ export default async function HomePage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {latest.map((n) => (
-                <NovelCard key={n.id} novel={n} />
+                <NovelCard key={n.id} novel={n} latestChapter={n.latestChapter} />
               ))}
             </div>
           )}

@@ -48,6 +48,7 @@ export default async function AuthorChaptersPage({
                 <th className="px-4 py-3 font-medium">序号</th>
                 <th className="px-4 py-3 font-medium">标题</th>
                 <th className="px-4 py-3 font-medium">状态</th>
+                <th className="px-4 py-3 font-medium">更新时间</th>
                 <th className="px-4 py-3 font-medium">操作</th>
               </tr>
             </thead>
@@ -65,10 +66,22 @@ export default async function AuthorChaptersPage({
                       </div>
                     )}
                   </td>
+                  <td className="px-4 py-3 text-stone-500">{c.updated_at.slice(0, 10)}</td>
                   <td className="px-4 py-3">
-                    <Link href={`/author/chapters/${c.id}/edit`} className="text-brand hover:underline">
-                      编辑
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                      <Link href={`/author/chapters/${c.id}/edit`} className="text-brand hover:underline">
+                        编辑
+                      </Link>
+                      {c.status === 'published' && c.novels?.slug && (
+                        <Link
+                          href={`/novels/${encodeURIComponent(c.novels.slug)}/${c.chapter_number}`}
+                          target="_blank"
+                          className="text-stone-600 hover:text-brand"
+                        >
+                          查看前台
+                        </Link>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

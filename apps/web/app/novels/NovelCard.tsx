@@ -1,8 +1,14 @@
 import Link from 'next/link';
 import { NOVEL_SERIAL_STATUS_LABELS } from '@guangyu/database';
-import type { NovelListItem } from '@/lib/queries';
+import type { NovelListItem, LatestChapterInfo } from '@/lib/queries';
 
-export function NovelCard({ novel }: { novel: NovelListItem }) {
+export function NovelCard({
+  novel,
+  latestChapter,
+}: {
+  novel: NovelListItem;
+  latestChapter?: LatestChapterInfo | null;
+}) {
   return (
     <Link
       href={`/novels/${encodeURIComponent(novel.slug)}`}
@@ -36,10 +42,17 @@ export function NovelCard({ novel }: { novel: NovelListItem }) {
             {NOVEL_SERIAL_STATUS_LABELS[novel.status]}
           </span>
         </div>
-        {novel.description && (
-          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-stone-500">
-            {novel.description}
+        {latestChapter ? (
+          <p className="mt-2 truncate text-xs text-stone-500">
+            <span className="text-brand-dark">最新</span> 第{latestChapter.chapterNumber}章 {latestChapter.title}
+            <span className="ml-1 text-stone-400">· {latestChapter.updatedAt.slice(0, 10)}</span>
           </p>
+        ) : (
+          novel.description && (
+            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-stone-500">
+              {novel.description}
+            </p>
+          )
         )}
       </div>
     </Link>
