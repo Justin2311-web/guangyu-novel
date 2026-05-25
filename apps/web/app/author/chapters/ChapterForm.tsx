@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useActionState } from 'react';
+import { RichTextEditor } from './RichTextEditor';
 import type { AuthorFormState } from '../types';
 
 type Action = (prev: AuthorFormState, formData: FormData) => Promise<AuthorFormState>;
@@ -34,7 +35,7 @@ export function ChapterForm({
   const lockedNovel = novels.find((n) => n.id === defaults?.novel_id);
 
   return (
-    <form action={formAction} className="max-w-2xl space-y-4">
+    <form action={formAction} className="max-w-4xl space-y-4 pb-20">
       <label className="block">
         <span className="text-sm text-stone-600">所属小说 *</span>
         {lockNovel ? (
@@ -78,20 +79,18 @@ export function ChapterForm({
         {fe.title && <span className="mt-1 block text-sm text-red-600">{fe.title}</span>}
       </label>
 
-      <label className="block">
+      <div className="block">
         <span className="text-sm text-stone-600">正文 *</span>
-        <textarea
-          name="content"
-          rows={16}
-          defaultValue={defaults?.content ?? ''}
-          className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 font-mono text-sm focus:border-brand focus:outline-none"
-        />
+        <div className="mt-1">
+          <RichTextEditor name="content" defaultValue={defaults?.content ?? ''} />
+        </div>
         {fe.content && <span className="mt-1 block text-sm text-red-600">{fe.content}</span>}
-      </label>
+      </div>
 
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
 
-      <div className="flex flex-wrap items-center gap-3">
+      {/* Sticky action bar */}
+      <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-3 border-t border-stone-200 bg-white/90 px-4 py-3 backdrop-blur">
         <button
           type="submit"
           name="intent"

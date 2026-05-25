@@ -34,4 +34,27 @@ body {
   .gy-btn-ghost {
     @apply inline-flex items-center justify-center rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:border-brand hover:text-brand;
   }
+  /* Rich-text chapter content (editor canvas + reader) */
+  .gy-chapter-content p {
+    @apply my-3;
+  }
+  .gy-chapter-content ul {
+    @apply my-3 list-disc pl-6;
+  }
+  .gy-chapter-content ol {
+    @apply my-3 list-decimal pl-6;
+  }
+  .gy-chapter-content li {
+    @apply my-1;
+  }
+  .gy-chapter-content blockquote {
+    @apply my-4 border-l-4 border-amber-200 pl-4 italic text-stone-600;
+  }
+  .gy-chapter-content hr {
+    @apply my-6 border-t border-stone-200;
+  }
+  .gy-chapter-content strong,
+  .gy-chapter-content b {
+    @apply font-semibold;
+  }
 }

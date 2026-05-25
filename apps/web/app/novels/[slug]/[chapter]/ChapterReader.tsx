@@ -49,6 +49,7 @@ function useStored<T extends string>(key: string, fallback: T): [T, (v: T) => vo
 export function ChapterReader({
   title,
   content,
+  isHtml = false,
   novelTitle,
   novelSlug,
   chapterNumber,
@@ -57,6 +58,7 @@ export function ChapterReader({
 }: {
   title: string;
   content: string;
+  isHtml?: boolean;
   novelTitle: string;
   novelSlug: string;
   chapterNumber: number;
@@ -127,9 +129,17 @@ export function ChapterReader({
           <p className={`mt-2 text-xs ${t.meta}`}>{novelTitle} · 第 {chapterNumber} 章</p>
         </header>
 
-        <div className={`whitespace-pre-line font-serif tracking-wide ${FONT[font]} ${LINE[line]}`}>
-          {content}
-        </div>
+        {isHtml ? (
+          <div
+            className={`gy-chapter-content font-serif tracking-wide ${FONT[font]} ${LINE[line]}`}
+            // Content is sanitized server-side (sanitize-html allow-list) before render.
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
+        ) : (
+          <div className={`whitespace-pre-line font-serif tracking-wide ${FONT[font]} ${LINE[line]}`}>
+            {content}
+          </div>
+        )}
 
         <div className="mt-10 border-t border-black/10 pt-5">
           <Pager />

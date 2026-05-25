@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCurrentUser } from '@/lib/supabase/server';
 import { NOVEL_SERIAL_STATUSES, CHAPTER_STATUSES, type NovelSerialStatus } from '@guangyu/database';
 import { ensureMyAuthor } from '@/lib/author';
+import { sanitizeChapterHtml, chapterPlainText } from '@/lib/chapter-content';
 import type { AuthorFormState } from './types';
 
 function slugify(input: string): string {
@@ -139,14 +140,16 @@ export async function updateNovelAction(
 function parseChapter(formData: FormData) {
   const novelId = String(formData.get('novel_id') ?? '').trim();
   const title = String(formData.get('title') ?? '').trim();
-  const content = String(formData.get('content') ?? '').trim();
+  // Sanitize rich-text HTML before it ever reaches the DB (defense also on render).
+  const content = sanitizeChapterHtml(String(formData.get('content') ?? ''));
   const numberRaw = String(formData.get('chapter_number') ?? '').trim();
   const intent = String(formData.get('intent') ?? 'draft');
 
   const fieldErrors: Record<string, string> = {};
   if (!novelId) fieldErrors.novel_id = '请选择所属小说。';
   if (!title) fieldErrors.title = '请填写标题。';
-  if (!content) fieldErrors.content = '正文不能为空。';
+  // Reject content that is visually empty after stripping formatting.
+  if (!chapterPlainText(content)) fieldErrors.content = '正文不能为空。';
   const chapterNumber = Number(numberRaw);
   if (!Number.isInteger(chapterNumber) || chapterNumber < 1) {
     fieldErrors.chapter_number = '章节序号需为正整数。';

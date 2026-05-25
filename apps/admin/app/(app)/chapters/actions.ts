@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient, getCurrentAdminUser } from '@/lib/supabase/server';
 import { CHAPTER_STATUSES, type ChapterStatus } from '@guangyu/database';
+import { sanitizeChapterHtml, chapterPlainText } from '@/lib/chapter-content';
 
 export type ChapterFormState = { error?: string; fieldErrors?: Record<string, string> };
 
@@ -17,14 +18,15 @@ async function requireSession(): Promise<boolean> {
 function parseForm(formData: FormData) {
   const novelId = String(formData.get('novel_id') ?? '').trim();
   const title = String(formData.get('title') ?? '').trim();
-  const content = String(formData.get('content') ?? '').trim();
+  // Rich-text content is sanitized before persisting (allow-list).
+  const content = sanitizeChapterHtml(String(formData.get('content') ?? ''));
   const numberRaw = String(formData.get('chapter_number') ?? '').trim();
   const statusRaw = String(formData.get('status') ?? '').trim();
 
   const fieldErrors: Record<string, string> = {};
   if (!novelId) fieldErrors.novel_id = '请选择所属小说。';
   if (!title) fieldErrors.title = '标题为必填项。';
-  if (!content) fieldErrors.content = '正文不能为空。';
+  if (!chapterPlainText(content)) fieldErrors.content = '正文不能为空。';
 
   const chapterNumber = Number(numberRaw);
   if (!Number.isInteger(chapterNumber) || chapterNumber < 1) {
