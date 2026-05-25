@@ -19,6 +19,8 @@ const TABS: { value: string; label: string }[] = [
   { value: 'all', label: '全部' },
 ];
 
+const READER_URL = process.env.NEXT_PUBLIC_READER_URL ?? 'https://guangyu-reader.vercel.app';
+
 type Row = {
   id: string;
   chapter_number: number;
@@ -26,7 +28,7 @@ type Row = {
   status: string;
   review_note: string | null;
   updated_at: string;
-  novels: { title: string; authors: { pen_name: string } | null } | null;
+  novels: { title: string; slug: string; authors: { pen_name: string } | null } | null;
 };
 
 export default async function ReviewChaptersPage({
@@ -40,7 +42,7 @@ export default async function ReviewChaptersPage({
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from('chapters')
-    .select('id, chapter_number, title, status, review_note, updated_at, novels(title, authors(pen_name))')
+    .select('id, chapter_number, title, status, review_note, updated_at, novels(title, slug, authors(pen_name))')
     .order('updated_at', { ascending: false });
   if (status !== 'all') query = query.eq('status', status);
   const { data, error } = await query;
@@ -112,7 +114,19 @@ export default async function ReviewChaptersPage({
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <ReviewButtons id={c.id} kind="chapter" status={c.status} />
+                    <div className="space-y-2">
+                      {c.status === 'published' && c.novels?.slug && (
+                        <a
+                          href={`${READER_URL}/novels/${encodeURIComponent(c.novels.slug)}/${c.chapter_number}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-sm text-stone-500 hover:text-brand"
+                        >
+                          前台查看
+                        </a>
+                      )}
+                      <ReviewButtons id={c.id} kind="chapter" status={c.status} />
+                    </div>
                   </td>
                 </tr>
               );

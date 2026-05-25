@@ -19,14 +19,17 @@ const TABS: { value: string; label: string }[] = [
   { value: 'all', label: '全部' },
 ];
 
+const READER_URL = process.env.NEXT_PUBLIC_READER_URL ?? 'https://guangyu-reader.vercel.app';
+
 type Row = {
   id: string;
+  slug: string;
   title: string;
   cover_image_url: string | null;
   review_status: string;
   review_note: string | null;
   updated_at: string;
-  authors: { pen_name: string } | null;
+  authors: { pen_name: string; slug: string | null } | null;
 };
 
 export default async function ReviewNovelsPage({
@@ -40,7 +43,7 @@ export default async function ReviewNovelsPage({
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from('novels')
-    .select('id, title, cover_image_url, review_status, review_note, updated_at, authors(pen_name)')
+    .select('id, slug, title, cover_image_url, review_status, review_note, updated_at, authors(pen_name, slug)')
     .order('updated_at', { ascending: false });
   if (status !== 'all') query = query.eq('review_status', status);
   const { data, error } = await query;
@@ -121,6 +124,26 @@ export default async function ReviewNovelsPage({
                       <Link href={`/novels/${n.id}/edit`} className="block text-sm text-brand hover:underline">
                         查看
                       </Link>
+                      {n.review_status === 'published' && (
+                        <a
+                          href={`${READER_URL}/novels/${encodeURIComponent(n.slug)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-sm text-stone-500 hover:text-brand"
+                        >
+                          前台详情
+                        </a>
+                      )}
+                      {n.authors?.slug && (
+                        <a
+                          href={`${READER_URL}/authors/${encodeURIComponent(n.authors.slug)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-sm text-stone-500 hover:text-brand"
+                        >
+                          作者主页
+                        </a>
+                      )}
                       <ReviewButtons id={n.id} kind="novel" status={n.review_status} />
                     </div>
                   </td>
