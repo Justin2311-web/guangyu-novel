@@ -5,7 +5,7 @@ import type { Role } from '@guangyu/database';
 type NavItem = { href: string; label: string; roles: Role[] };
 
 const NAV: NavItem[] = [
-  { href: '/', label: '概览', roles: ['superadmin', 'admin', 'author'] },
+  { href: '/', label: '概览', roles: ['superadmin', 'admin'] },
   { href: '/novels', label: '小说', roles: ['superadmin', 'admin', 'author'] },
   { href: '/chapters', label: '章节', roles: ['superadmin', 'admin', 'author'] },
   { href: '/review/novels', label: '审核 · 小说', roles: ['superadmin', 'admin'] },
