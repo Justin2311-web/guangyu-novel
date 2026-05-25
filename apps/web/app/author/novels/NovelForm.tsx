@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useActionState } from 'react';
 import { NOVEL_SERIAL_STATUSES, NOVEL_SERIAL_STATUS_LABELS } from '@guangyu/database';
+import { ImageUploadField } from '../../components/ImageUploadField';
 import type { AuthorFormState } from '../types';
 
 type Action = (prev: AuthorFormState, formData: FormData) => Promise<AuthorFormState>;
@@ -59,16 +60,12 @@ export function NovelForm({
         </select>
       </label>
 
-      <label className="block">
-        <span className="text-sm text-stone-600">封面图片 URL（可选）</span>
-        <input
-          type="url"
-          name="cover_image_url"
-          defaultValue={defaults?.cover_image_url ?? ''}
-          placeholder="https://…"
-          className={inputClass}
-        />
-      </label>
+      <ImageUploadField
+        name="cover_image_url"
+        label="封面图片（可选）"
+        defaultValue={defaults?.cover_image_url ?? ''}
+        folder="novels/covers"
+      />
 
       <label className="block">
         <span className="text-sm text-stone-600">简介</span>
