@@ -14,8 +14,10 @@ import {
 } from '@/lib/queries';
 import { BookmarkButton } from './BookmarkButton';
 import { CommentSection } from './CommentSection';
+import { ShareButtons } from './ShareButtons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { PosterCard } from '../../components/PosterCard';
+import { SITE_NAME, absoluteUrl, clampText } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,8 +28,32 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const novel = await getNovelBySlug(slug);
-  if (!novel) return { title: '未找到' };
-  return { title: novel.title, description: novel.description ?? undefined };
+  if (!novel) return { title: '未找到', robots: { index: false, follow: false } };
+
+  const canonical = `/novels/${encodeURIComponent(novel.slug)}`;
+  const description =
+    clampText(novel.description) ?? `《${novel.title}》- 在${SITE_NAME}免费在线阅读。`;
+  const images = novel.cover_image_url ? [{ url: novel.cover_image_url }] : undefined;
+
+  return {
+    title: novel.title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: 'book',
+      title: `${novel.title} - ${SITE_NAME}`,
+      description,
+      url: canonical,
+      images,
+      ...(novel.authors?.pen_name ? { authors: [novel.authors.pen_name] } : {}),
+    },
+    twitter: {
+      card: images ? 'summary_large_image' : 'summary',
+      title: `${novel.title} - ${SITE_NAME}`,
+      description,
+      ...(images ? { images: [novel.cover_image_url as string] } : {}),
+    },
+  };
 }
 
 export default async function NovelDetailPage({
@@ -59,8 +85,28 @@ export default async function NovelDetailPage({
         .slice(0, 6)
     : [];
 
+  const novelUrl = absoluteUrl(`/novels/${encodeURIComponent(novel.slug)}`);
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Book',
+    name: novel.title,
+    url: novelUrl,
+    ...(novel.description ? { description: clampText(novel.description, 300) } : {}),
+    ...(novel.cover_image_url ? { image: novel.cover_image_url } : {}),
+    ...(novel.authors?.pen_name
+      ? { author: { '@type': 'Person', name: novel.authors.pen_name } }
+      : {}),
+    inLanguage: 'zh-CN',
+    publisher: { '@type': 'Organization', name: SITE_NAME },
+  };
+
   return (
     <article className="space-y-8">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Hero */}
       <div className="gy-card overflow-hidden border-amber-100 bg-gradient-to-br from-amber-50 to-white">
         <div className="flex flex-col gap-6 p-6 sm:flex-row">
@@ -136,6 +182,10 @@ export default async function NovelDetailPage({
                 </button>
               )}
               <BookmarkButton novelId={novel.id} isLoggedIn={isLoggedIn} initialBookmarked={bookmarked} />
+            </div>
+
+            <div className="pt-1">
+              <ShareButtons url={novelUrl} title={`${novel.title} - ${SITE_NAME}`} />
             </div>
           </div>
         </div>

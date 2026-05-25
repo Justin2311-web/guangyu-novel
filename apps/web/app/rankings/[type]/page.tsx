@@ -14,7 +14,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { type } = await params;
   const r = rankingBySlug(type);
-  return { title: r ? r.title : '排行榜' };
+  if (!r) return { title: '排行榜', robots: { index: false, follow: false } };
+  return {
+    title: r.title,
+    description: `光羽小说${r.title} — ${r.desc}。`,
+    alternates: { canonical: `/rankings/${r.slug}` },
+  };
 }
 
 export default async function RankingPage({ params }: { params: Promise<{ type: string }> }) {

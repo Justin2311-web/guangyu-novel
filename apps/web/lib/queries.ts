@@ -477,6 +477,43 @@ export async function getNovelCommentCount(novelId: string): Promise<number> {
   return count ?? 0;
 }
 
+// =====================================================================
+// Phase 6g — sitemap data (public, published content only)
+// =====================================================================
+
+export type SitemapNovel = { slug: string; updatedAt: string };
+export type SitemapChapter = { novelSlug: string; chapterNumber: number; updatedAt: string };
+
+/** All published novels (slug + updated_at). RLS gates to is_published = true. */
+export async function getSitemapNovels(): Promise<SitemapNovel[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('novels')
+    .select('slug, updated_at')
+    .order('updated_at', { ascending: false });
+  return ((data ?? []) as { slug: string; updated_at: string }[]).map((r) => ({
+    slug: r.slug,
+    updatedAt: r.updated_at,
+  }));
+}
+
+/** All published chapters (novel slug + number). RLS gates to published chapters of published novels. */
+export async function getSitemapChapters(): Promise<SitemapChapter[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from('chapters')
+    .select('chapter_number, updated_at, novels!inner(slug)')
+    .eq('status', 'published');
+  type Row = { chapter_number: number; updated_at: string; novels: { slug: string } | null };
+  return ((data ?? []) as unknown as Row[])
+    .filter((r) => r.novels)
+    .map((r) => ({
+      novelSlug: r.novels!.slug,
+      chapterNumber: r.chapter_number,
+      updatedAt: r.updated_at,
+    }));
+}
+
 export type NovelDetail = NovelListItem & { description: string | null };
 
 /** Route params for non-ASCII slugs arrive percent-encoded; decode before matching. */

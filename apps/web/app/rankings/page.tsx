@@ -3,7 +3,11 @@ import { RANKINGS } from './meta';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: '排行榜' };
+export const metadata = {
+  title: '排行榜',
+  description: '光羽小说排行榜：人气榜、最新更新榜、收藏榜、完结榜与新书榜，发现热门好书。',
+  alternates: { canonical: '/rankings' },
+};
 
 export default function RankingsIndexPage() {
   return (

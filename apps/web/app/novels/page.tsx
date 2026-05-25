@@ -9,7 +9,11 @@ import { PosterCard } from '../components/PosterCard';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: '小说' };
+export const metadata = {
+  title: '小说书库',
+  description: '光羽小说书库：按关键词、分类、状态搜索与排序，发现你喜欢的在线小说。',
+  alternates: { canonical: '/novels' },
+};
 
 const SORT_LABELS: Record<NovelSort, string> = {
   updated: '最近更新',

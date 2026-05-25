@@ -5,7 +5,11 @@ import { AuthorLevelBadge } from '../components/AuthorLevelBadge';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: '作者' };
+export const metadata = {
+  title: '作者列表',
+  description: '浏览光羽小说的全部作者，查看他们的简介、作品与等级。',
+  alternates: { canonical: '/authors' },
+};
 
 export default async function AuthorsDirectoryPage() {
   const authors = await getPublicAuthors();

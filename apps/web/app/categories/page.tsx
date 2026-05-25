@@ -3,7 +3,11 @@ import { getCategories } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: '分类' };
+export const metadata = {
+  title: '小说分类',
+  description: '按玄幻、都市、仙侠、历史、科幻、悬疑等分类浏览光羽小说的全部作品。',
+  alternates: { canonical: '/categories' },
+};
 
 export default async function CategoriesPage() {
   const categories = await getCategories();

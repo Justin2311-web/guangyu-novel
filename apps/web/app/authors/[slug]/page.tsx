@@ -6,6 +6,7 @@ import { AuthorAvatar } from '../../components/AuthorAvatar';
 import { AuthorLevelBadge } from '../../components/AuthorLevelBadge';
 import { PosterCard } from '../../components/PosterCard';
 import { SectionHeader } from '../../components/SectionHeader';
+import { SITE_NAME, absoluteUrl, clampText } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,10 +17,31 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const author = await getPublicAuthorBySlug(slug);
-  if (!author) return { title: '未找到' };
+  if (!author) return { title: '未找到', robots: { index: false, follow: false } };
+
+  const canonical = `/authors/${encodeURIComponent(author.slug)}`;
+  const title = `${author.penName} - 作者主页`;
+  const description =
+    clampText(author.bio) ?? `${author.penName} 在 ${SITE_NAME} 的作品与简介。`;
+  const images = author.avatarUrl ? [{ url: author.avatarUrl }] : undefined;
+
   return {
-    title: author.penName,
-    description: author.bio ?? `${author.penName} 的作品与简介`,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: 'profile',
+      title: `${title} - ${SITE_NAME}`,
+      description,
+      url: canonical,
+      images,
+    },
+    twitter: {
+      card: images ? 'summary_large_image' : 'summary',
+      title: `${title} - ${SITE_NAME}`,
+      description,
+      ...(images ? { images: [author.avatarUrl as string] } : {}),
+    },
   };
 }
 
@@ -43,8 +65,22 @@ export default async function AuthorPublicPage({
 
   const { novels, stats } = await getAuthorPublicData(author.id);
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: author.penName,
+    url: absoluteUrl(`/authors/${encodeURIComponent(author.slug)}`),
+    ...(author.bio ? { description: clampText(author.bio, 300) } : {}),
+    ...(author.avatarUrl ? { image: author.avatarUrl } : {}),
+  };
+
   return (
     <article className="space-y-8">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav className="text-sm text-stone-500">
         <Link href="/authors" className="hover:text-brand">作者</Link>
         <span className="px-1.5">/</span>
