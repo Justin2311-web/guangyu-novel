@@ -6,6 +6,7 @@ import { getNovelBySlug, getPublishedChapters, getChapterContent } from '@/lib/q
 import { RecordReading } from './RecordReading';
 import { ChapterReader } from './ChapterReader';
 import { SITE_NAME, clampText } from '@/lib/site';
+import { sanitizeChapterHtml, chapterPlainText, looksLikeHtml } from '@/lib/chapter-content';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,8 @@ export async function generateMetadata({
   const canonical = `/novels/${encodeURIComponent(novel.slug)}/${current.chapter_number}`;
   const title = `${current.title} - ${novel.title}`;
   const description =
-    clampText(current.content) ?? `${novel.title} 第${current.chapter_number}章 ${current.title}`;
+    clampText(chapterPlainText(current.content)) ??
+    `${novel.title} 第${current.chapter_number}章 ${current.title}`;
 
   return {
     title,
@@ -70,6 +72,11 @@ export default async function ChapterReaderPage({
 
   const session = await getCurrentUser();
 
+  // Legacy plain-text chapters render as before; rich-text chapters are
+  // re-sanitized server-side (defense-in-depth) and rendered as HTML.
+  const isHtml = looksLikeHtml(current.content);
+  const content = isHtml ? sanitizeChapterHtml(current.content) : current.content;
+
   return (
     <div className="mx-auto max-w-2xl">
       {session && <RecordReading novelId={novel.id} chapterId={current.id} />}
@@ -84,7 +91,8 @@ export default async function ChapterReaderPage({
 
       <ChapterReader
         title={current.title}
-        content={current.content}
+        content={content}
+        isHtml={isHtml}
         novelTitle={novel.title}
         novelSlug={novel.slug}
         chapterNumber={current.chapter_number}
