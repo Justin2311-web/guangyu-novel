@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 const BUCKET = 'public-assets';
@@ -19,18 +19,26 @@ export function ImageUploadField({
   defaultValue,
   folder,
   allowClear = true,
+  onChange,
 }: {
   name: string;
   label: string;
   defaultValue?: string | null;
   folder: string;
   allowClear?: boolean;
+  onChange?: (url: string) => void;
 }) {
   const [url, setUrl] = useState(defaultValue ?? '');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string>();
   const [manual, setManual] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  useEffect(() => {
+    onChangeRef.current?.(url);
+  }, [url]);
 
   async function onFile(file: File) {
     setError(undefined);

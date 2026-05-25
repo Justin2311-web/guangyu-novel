@@ -1,10 +1,13 @@
 import { getCategories } from '@/lib/queries';
+import { ensureMyAuthor } from '@/lib/author';
 import { createNovelAction } from '../../actions';
 import { NovelForm } from '../NovelForm';
 
 export const dynamic = 'force-dynamic';
 
 export default async function NewNovelPage() {
+  const author = await ensureMyAuthor();
+  if (!author) return <p className="text-sm text-stone-500">未找到作者资料。</p>;
   const categories = await getCategories();
   return (
     <div className="space-y-5">
@@ -12,7 +15,11 @@ export default async function NewNovelPage() {
       <p className="text-sm text-stone-500">
         新作品默认不公开。「保存草稿」可稍后继续编辑；「提交审核」后由管理员审核发布。
       </p>
-      <NovelForm action={createNovelAction} categories={categories.map((c) => ({ id: c.id, name: c.name }))} />
+      <NovelForm
+        action={createNovelAction}
+        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+        draftKey={`nv:new:${author.id}`}
+      />
     </div>
   );
 }
