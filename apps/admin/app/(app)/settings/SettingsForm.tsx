@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState } from 'react';
 import type { SiteSettings } from '@guangyu/database';
+import { ImageUploadField } from '../../components/ImageUploadField';
 import { saveSiteSettingsAction } from './actions';
 import { SETTING_GROUPS, type SettingField, type SettingsActionResult } from './fields';
 
@@ -10,37 +11,17 @@ const initial: SettingsActionResult = { ok: false };
 const inputClass =
   'mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 text-sm focus:border-brand focus:outline-none';
 
-function ImageField({ field, defaultValue }: { field: SettingField; defaultValue: string }) {
-  const [url, setUrl] = useState(defaultValue);
-  return (
-    <label className="block">
-      <span className="text-sm text-stone-600">{field.label}</span>
-      <input
-        type="url"
-        name={field.key}
-        value={url}
-        placeholder={field.placeholder}
-        onChange={(e) => setUrl(e.target.value)}
-        className={inputClass}
-      />
-      {url ? (
-        <span className="mt-2 block">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={url}
-            alt={`${field.label} 预览`}
-            className="max-h-20 rounded-md border border-stone-200 object-contain"
-          />
-        </span>
-      ) : (
-        <span className="mt-1 block text-xs text-stone-400">填写 URL 后显示预览。</span>
-      )}
-    </label>
-  );
-}
-
 function Field({ field, defaultValue }: { field: SettingField; defaultValue: string }) {
-  if (field.type === 'image') return <ImageField field={field} defaultValue={defaultValue} />;
+  if (field.type === 'image') {
+    return (
+      <ImageUploadField
+        name={field.key}
+        label={field.label}
+        defaultValue={defaultValue}
+        folder="site/logo"
+      />
+    );
+  }
   if (field.type === 'textarea') {
     return (
       <label className="block">

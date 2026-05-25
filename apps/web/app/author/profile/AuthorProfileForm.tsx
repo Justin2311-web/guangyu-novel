@@ -1,7 +1,7 @@
 'use client';
 
-import { useActionState, useState } from 'react';
-import { AuthorAvatar } from '../../components/AuthorAvatar';
+import { useActionState } from 'react';
+import { ImageUploadField } from '../../components/ImageUploadField';
 import { updateAuthorProfileAction } from './actions';
 import type { ProfileActionState } from './types';
 
@@ -14,42 +14,22 @@ const inputClass =
 
 export function AuthorProfileForm({ defaults }: { defaults: Defaults }) {
   const [state, formAction, pending] = useActionState(updateAuthorProfileAction, initial);
-  const [penName, setPenName] = useState(defaults.pen_name);
-  const [avatarUrl, setAvatarUrl] = useState(defaults.avatar_url);
   const fe = state.fieldErrors ?? {};
 
   return (
     <form action={formAction} className="max-w-xl space-y-5">
-      <div className="flex items-center gap-4">
-        <AuthorAvatar src={avatarUrl.trim() || null} name={penName || '作者'} size="lg" />
-        <p className="text-xs text-stone-400">头像预览</p>
-      </div>
+      <ImageUploadField
+        name="avatar_url"
+        label="头像（可选）"
+        defaultValue={defaults.avatar_url}
+        folder="authors/avatars"
+      />
+      {fe.avatar_url && <span className="block text-xs text-red-600">{fe.avatar_url}</span>}
 
       <label className="block">
         <span className="text-sm text-stone-600">笔名 *</span>
-        <input
-          name="pen_name"
-          required
-          value={penName}
-          onChange={(e) => setPenName(e.target.value)}
-          className={inputClass}
-        />
+        <input name="pen_name" required defaultValue={defaults.pen_name} className={inputClass} />
         {fe.pen_name && <span className="mt-1 block text-xs text-red-600">{fe.pen_name}</span>}
-      </label>
-
-      <label className="block">
-        <span className="text-sm text-stone-600">头像链接（可选）</span>
-        <input
-          name="avatar_url"
-          value={avatarUrl}
-          onChange={(e) => setAvatarUrl(e.target.value)}
-          placeholder="https://…/avatar.jpg"
-          className={inputClass}
-        />
-        <span className="mt-1 block text-xs text-stone-400">
-          粘贴一张公开可访问的图片链接（http/https）。
-        </span>
-        {fe.avatar_url && <span className="mt-1 block text-xs text-red-600">{fe.avatar_url}</span>}
       </label>
 
       <label className="block">

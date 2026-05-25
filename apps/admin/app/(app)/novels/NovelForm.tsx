@@ -6,6 +6,7 @@ import {
   NOVEL_SERIAL_STATUSES,
   NOVEL_SERIAL_STATUS_LABELS,
 } from '@guangyu/database';
+import { ImageUploadField } from '../../components/ImageUploadField';
 import type { NovelFormState } from './actions';
 
 type Action = (prev: NovelFormState, formData: FormData) => Promise<NovelFormState>;
@@ -103,16 +104,12 @@ export function NovelForm({
         </select>
       </label>
 
-      <label className="block">
-        <span className="text-sm text-stone-600">封面图片 URL（可选）</span>
-        <input
-          type="url"
-          name="cover_image_url"
-          defaultValue={defaults?.cover_image_url ?? ''}
-          placeholder="https://…"
-          className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 focus:border-brand focus:outline-none"
-        />
-      </label>
+      <ImageUploadField
+        name="cover_image_url"
+        label="封面图片（可选）"
+        defaultValue={defaults?.cover_image_url ?? ''}
+        folder="novels/covers"
+      />
 
       <label className="block">
         <span className="text-sm text-stone-600">描述</span>

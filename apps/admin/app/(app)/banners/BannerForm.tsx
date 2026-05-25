@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, useState } from 'react';
+import { useActionState } from 'react';
+import { ImageUploadField } from '../../components/ImageUploadField';
 import type { BannerFormState } from './actions';
 
 type Action = (prev: BannerFormState, formData: FormData) => Promise<BannerFormState>;
@@ -18,21 +19,6 @@ export type BannerDefaults = {
 
 const initial: BannerFormState = {};
 
-function Preview({ url, label }: { url: string; label: string }) {
-  if (!url) return null;
-  return (
-    <div className="mt-2">
-      <span className="mb-1 block text-xs text-stone-400">{label}预览</span>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={url}
-        alt={`${label}预览`}
-        className="max-h-40 rounded-md border border-stone-200 object-contain"
-      />
-    </div>
-  );
-}
-
 export function BannerForm({
   action,
   submitLabel,
@@ -44,8 +30,6 @@ export function BannerForm({
 }) {
   const [state, formAction, pending] = useActionState(action, initial);
   const fe = state.fieldErrors ?? {};
-  const [imageUrl, setImageUrl] = useState(defaults?.image_url ?? '');
-  const [mobileImageUrl, setMobileImageUrl] = useState(defaults?.mobile_image_url ?? '');
 
   return (
     <form action={formAction} className="max-w-2xl space-y-4">
@@ -59,33 +43,23 @@ export function BannerForm({
         />
       </label>
 
-      <label className="block">
-        <span className="text-sm text-stone-600">桌面端图片 URL *</span>
-        <input
-          type="url"
+      <div>
+        <ImageUploadField
           name="image_url"
-          required
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://…"
-          className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 focus:border-brand focus:outline-none"
+          label="桌面端图片 *"
+          defaultValue={defaults?.image_url ?? ''}
+          folder="site/banners"
+          allowClear={false}
         />
         {fe.image_url && <span className="mt-1 block text-sm text-red-600">{fe.image_url}</span>}
-        <Preview url={imageUrl} label="桌面端" />
-      </label>
+      </div>
 
-      <label className="block">
-        <span className="text-sm text-stone-600">移动端图片 URL（可选，留空则使用桌面端图片）</span>
-        <input
-          type="url"
-          name="mobile_image_url"
-          value={mobileImageUrl}
-          onChange={(e) => setMobileImageUrl(e.target.value)}
-          placeholder="https://…"
-          className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 focus:border-brand focus:outline-none"
-        />
-        <Preview url={mobileImageUrl} label="移动端" />
-      </label>
+      <ImageUploadField
+        name="mobile_image_url"
+        label="移动端图片（可选，留空则使用桌面端图片）"
+        defaultValue={defaults?.mobile_image_url ?? ''}
+        folder="site/banners"
+      />
 
       <label className="block">
         <span className="text-sm text-stone-600">链接 URL（可选）</span>
