@@ -41,6 +41,40 @@ export default async function AuthorDashboardPage() {
         {author.bio && <p className="mt-1 text-sm text-stone-500">{author.bio}</p>}
       </div>
 
+      {novels.length === 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-5">
+          <h2 className="font-medium text-amber-900">欢迎来到作者中心 👋</h2>
+          <p className="mt-1 text-sm text-amber-800/80">按以下步骤发布你的第一部作品：</p>
+          <ol className="mt-3 space-y-2 text-sm text-amber-900">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-semibold">1</span>
+              <span>
+                完善作者资料（头像、笔名、简介）—{' '}
+                <Link href="/author/profile" className="font-medium text-brand hover:underline">编辑作者资料</Link>
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-semibold">2</span>
+              <span>
+                创建第一本小说 —{' '}
+                <Link href="/author/novels/new" className="font-medium text-brand hover:underline">创建小说</Link>
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-semibold">3</span>
+              <span>
+                上传章节 —{' '}
+                <Link href="/author/chapters/new" className="font-medium text-brand hover:underline">新增章节</Link>
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-semibold">4</span>
+              <span>提交审核，管理员通过后作品将公开展示。</span>
+            </li>
+          </ol>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label="作品总数" value={stats.totalNovels} />
         <Stat label="已发布" value={stats.publishedNovels} />

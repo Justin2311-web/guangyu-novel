@@ -1,8 +1,11 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { submitAuthorApplicationAction } from './actions';
 import type { ApplyActionState } from './types';
+
+const PEN_MAX = 50;
+const BIO_MAX = 500;
 
 type Defaults = {
   pen_name?: string;
@@ -22,6 +25,8 @@ const inputClass =
 export function ApplyForm({ defaults, submitLabel }: { defaults?: Defaults; submitLabel: string }) {
   const [state, formAction, pending] = useActionState(submitAuthorApplicationAction, initial);
   const fe = state.fieldErrors ?? {};
+  const [penName, setPenName] = useState(defaults?.pen_name ?? '');
+  const [bio, setBio] = useState(defaults?.bio ?? '');
 
   if (state.ok) {
     return (
@@ -34,14 +39,36 @@ export function ApplyForm({ defaults, submitLabel }: { defaults?: Defaults; subm
   return (
     <form action={formAction} className="max-w-xl space-y-4">
       <label className="block">
-        <span className="text-sm text-stone-600">笔名 *</span>
-        <input name="pen_name" required defaultValue={defaults?.pen_name ?? ''} className={inputClass} />
+        <span className="flex items-center justify-between text-sm text-stone-600">
+          <span>笔名 *</span>
+          <span className="text-xs text-stone-400">{penName.length}/{PEN_MAX}</span>
+        </span>
+        <input
+          name="pen_name"
+          required
+          maxLength={PEN_MAX}
+          value={penName}
+          onChange={(e) => setPenName(e.target.value)}
+          placeholder="读者将看到的作者名"
+          className={inputClass}
+        />
         {fe.pen_name && <span className="mt-1 block text-xs text-red-600">{fe.pen_name}</span>}
       </label>
 
       <label className="block">
-        <span className="text-sm text-stone-600">作者简介 *</span>
-        <textarea name="bio" rows={3} defaultValue={defaults?.bio ?? ''} className={inputClass} />
+        <span className="flex items-center justify-between text-sm text-stone-600">
+          <span>作者简介 *</span>
+          <span className="text-xs text-stone-400">{bio.length}/{BIO_MAX}</span>
+        </span>
+        <textarea
+          name="bio"
+          rows={3}
+          maxLength={BIO_MAX}
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          placeholder="简单介绍自己、擅长的题材与写作风格"
+          className={inputClass}
+        />
         {fe.bio && <span className="mt-1 block text-xs text-red-600">{fe.bio}</span>}
       </label>
 
