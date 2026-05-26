@@ -71,8 +71,15 @@ export default async function AccountPage() {
         <h2 className="text-lg font-medium">作者申请</h2>
 
         {isAuthorOrAbove ? (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            您已是作者，可前往作者后台管理作品（创建小说、章节并提交审核）。
+          <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-700">
+            <div className="font-medium">您已是作者 ✓</div>
+            <p className="mt-1 text-emerald-700/80">在作者中心创建小说、上传章节并提交审核。</p>
+            <Link
+              href="/author/dashboard"
+              className="mt-3 inline-flex rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+            >
+              进入作者中心
+            </Link>
           </div>
         ) : deleted ? (
           <p className="text-sm text-stone-500">账户不可用，无法提交申请。</p>
@@ -97,9 +104,17 @@ export default async function AccountPage() {
               </div>
             )}
             {!app && (
-              <p className="text-sm text-stone-500">
-                想在光羽发布作品？填写下面的表单申请成为作者，审核通过后即可创建并提交小说与章节。
-              </p>
+              <div className="rounded-md border border-amber-100 bg-amber-50/60 px-4 py-4 text-sm text-stone-600">
+                <div className="font-medium text-stone-800">成为光羽作者</div>
+                <p className="mt-1">通过作者申请后，您可以：</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-stone-600">
+                  <li>创建并管理自己的小说</li>
+                  <li>使用富文本编辑器撰写并上传章节</li>
+                  <li>提交作品给管理员审核</li>
+                  <li>审核通过后，作品将在前台公开展示</li>
+                </ul>
+                <p className="mt-2 text-stone-500">填写下面的表单即可申请。</p>
+              </div>
             )}
             <ApplyForm
               submitLabel={app ? '修改后重新提交' : '申请成为作者'}
