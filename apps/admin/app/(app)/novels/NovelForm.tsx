@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import {
   NOVEL_SERIAL_STATUSES,
   NOVEL_SERIAL_STATUS_LABELS,
@@ -17,6 +17,7 @@ export type NovelDefaults = {
   description?: string | null;
   cover_image_url?: string | null;
   category_id?: string | null;
+  secondary_category_id?: string | null;
   status?: string;
   is_published?: boolean;
   author_id?: string | null;
@@ -43,6 +44,8 @@ export function NovelForm({
 }) {
   const [state, formAction, pending] = useActionState(action, initial);
   const fe = state.fieldErrors ?? {};
+  const [categoryId, setCategoryId] = useState(defaults?.category_id ?? '');
+  const [secondaryCategoryId, setSecondaryCategoryId] = useState(defaults?.secondary_category_id ?? '');
 
   return (
     <form action={formAction} className="max-w-2xl space-y-4">
@@ -88,21 +91,47 @@ export function NovelForm({
         </label>
       )}
 
-      <label className="block">
-        <span className="text-sm text-stone-600">分类</span>
-        <select
-          name="category_id"
-          defaultValue={defaults?.category_id ?? ''}
-          className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 focus:border-brand focus:outline-none"
-        >
-          <option value="">— 未分类 —</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm text-stone-600">主分类 *</span>
+          <select
+            name="category_id"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 focus:border-brand focus:outline-none"
+          >
+            <option value="">— 请选择 —</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+          {fe.category_id && <span className="mt-1 block text-sm text-red-600">{fe.category_id}</span>}
+        </label>
+        <label className="block">
+          <span className="text-sm text-stone-600">副分类（可选）</span>
+          <select
+            name="secondary_category_id"
+            value={secondaryCategoryId}
+            onChange={(e) => setSecondaryCategoryId(e.target.value)}
+            className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 focus:border-brand focus:outline-none"
+          >
+            <option value="">— 无 —</option>
+            {categories
+              .filter((c) => c.id !== categoryId)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+          </select>
+          {fe.secondary_category_id && (
+            <span className="mt-1 block text-sm text-red-600">{fe.secondary_category_id}</span>
+          )}
+        </label>
+      </div>
+      <p className="-mt-2 text-xs text-stone-400">最多 2 个分类，主分类必填，副分类不能与主分类相同。</p>
 
       <ImageUploadField
         name="cover_image_url"

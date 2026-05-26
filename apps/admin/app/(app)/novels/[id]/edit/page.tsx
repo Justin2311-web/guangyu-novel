@@ -17,7 +17,7 @@ export default async function EditNovelPage({
   const { data } = await supabase
     .from('novels')
     .select(
-      'id, author_id, category_id, slug, title, description, cover_image_url, status, is_published',
+      'id, author_id, category_id, secondary_category_id, slug, title, description, cover_image_url, status, is_published',
     )
     .eq('id', id)
     .maybeSingle();
@@ -28,6 +28,7 @@ export default async function EditNovelPage({
     | 'id'
     | 'author_id'
     | 'category_id'
+    | 'secondary_category_id'
     | 'slug'
     | 'title'
     | 'description'
@@ -54,6 +55,7 @@ export default async function EditNovelPage({
           description: novel.description,
           cover_image_url: novel.cover_image_url,
           category_id: novel.category_id,
+          secondary_category_id: novel.secondary_category_id,
           status: novel.status,
           is_published: novel.is_published,
           author_id: novel.author_id,

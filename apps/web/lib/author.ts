@@ -73,12 +73,13 @@ export type MyNovel = {
   review_note: string | null;
   is_published: boolean;
   category_id: string | null;
+  secondary_category_id: string | null;
   updated_at: string;
   categories: { name: string } | null;
 };
 
 const MY_NOVEL_SELECT =
-  'id, slug, title, description, cover_image_url, status, review_status, review_note, is_published, category_id, updated_at, categories(name)';
+  'id, slug, title, description, cover_image_url, status, review_status, review_note, is_published, category_id, secondary_category_id, updated_at, categories(name)';
 
 /** Novels owned by an author (RLS also enforces ownership). */
 export async function getMyNovels(authorId: string): Promise<MyNovel[]> {

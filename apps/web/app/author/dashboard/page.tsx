@@ -69,6 +69,10 @@ export default async function AuthorDashboardPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-semibold">4</span>
+              <span>规划作品大纲（创建小说后，在作品的「大纲」中管理世界观、剧情线、角色与伏笔）。</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-semibold">5</span>
               <span>提交审核，管理员通过后作品将公开展示。</span>
             </li>
           </ol>

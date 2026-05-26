@@ -81,6 +81,12 @@ export default async function AuthorNovelsPage() {
                           章节
                         </Link>
                         <Link
+                          href={`/author/novels/${n.id}/outline`}
+                          className="text-stone-600 hover:text-brand"
+                        >
+                          大纲
+                        </Link>
+                        <Link
                           href={`/author/chapters/new?novel=${n.id}`}
                           className="text-stone-600 hover:text-brand"
                         >

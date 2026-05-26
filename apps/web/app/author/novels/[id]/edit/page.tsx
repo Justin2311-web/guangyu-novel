@@ -19,7 +19,15 @@ export default async function EditNovelPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="space-y-5">
-      <h2 className="text-lg font-medium">编辑小说</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-medium">编辑小说</h2>
+        <a
+          href={`/author/novels/${novel.id}/outline`}
+          className="rounded-md border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:border-brand hover:text-brand"
+        >
+          管理大纲
+        </a>
+      </div>
       {novel.review_status === 'rejected' && (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <div className="font-medium">审核未通过</div>
@@ -36,6 +44,7 @@ export default async function EditNovelPage({ params }: { params: Promise<{ id: 
           description: novel.description,
           cover_image_url: novel.cover_image_url,
           category_id: novel.category_id,
+          secondary_category_id: novel.secondary_category_id,
           status: novel.status,
         }}
         draftKey={`nv:${author.id}:${novel.id}`}
