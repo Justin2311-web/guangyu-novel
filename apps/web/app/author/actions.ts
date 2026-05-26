@@ -42,6 +42,7 @@ function parseNovel(formData: FormData) {
   const description = String(formData.get('description') ?? '').trim();
   const coverImageUrl = String(formData.get('cover_image_url') ?? '').trim();
   const categoryId = String(formData.get('category_id') ?? '').trim();
+  let secondaryCategoryId = String(formData.get('secondary_category_id') ?? '').trim();
   const statusRaw = String(formData.get('status') ?? '').trim();
   const intent = String(formData.get('intent') ?? 'draft');
 
@@ -49,6 +50,13 @@ function parseNovel(formData: FormData) {
   if (!title) fieldErrors.title = '请填写标题。';
   const slug = slugRaw ? slugify(slugRaw) : slugify(title);
   if (!slug) fieldErrors.slug = '别名不能为空（字母、数字或中文）。';
+
+  // Dual category: primary required; secondary optional and must differ.
+  if (!categoryId) fieldErrors.category_id = '请选择主分类。';
+  if (secondaryCategoryId && secondaryCategoryId === categoryId) {
+    fieldErrors.secondary_category_id = '副分类不能与主分类相同。';
+  }
+  if (!secondaryCategoryId) secondaryCategoryId = '';
 
   const status = (NOVEL_SERIAL_STATUSES as readonly string[]).includes(statusRaw)
     ? (statusRaw as NovelSerialStatus)
@@ -61,6 +69,7 @@ function parseNovel(formData: FormData) {
     description: description || null,
     coverImageUrl: coverImageUrl || null,
     categoryId: categoryId || null,
+    secondaryCategoryId: secondaryCategoryId || null,
     status,
     reviewStatus,
     fieldErrors,
@@ -81,6 +90,7 @@ export async function createNovelAction(
   const { error } = await supabase.from('novels').insert({
     author_id: ctx.authorId,
     category_id: f.categoryId,
+    secondary_category_id: f.secondaryCategoryId,
     slug: f.slug,
     title: f.title,
     description: f.description,
@@ -116,6 +126,7 @@ export async function updateNovelAction(
     .from('novels')
     .update({
       category_id: f.categoryId,
+      secondary_category_id: f.secondaryCategoryId,
       slug: f.slug,
       title: f.title,
       description: f.description,

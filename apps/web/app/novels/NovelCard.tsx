@@ -38,6 +38,11 @@ export function NovelCard({
               {novel.categories.name}
             </span>
           )}
+          {novel.secondaryCategory?.name && (
+            <span className="rounded bg-amber-50 px-1.5 py-0.5 text-brand-dark">
+              {novel.secondaryCategory.name}
+            </span>
+          )}
           <span className="rounded bg-stone-100 px-1.5 py-0.5">
             {NOVEL_SERIAL_STATUS_LABELS[novel.status]}
           </span>

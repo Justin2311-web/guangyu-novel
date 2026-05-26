@@ -201,6 +201,7 @@ export interface Novel {
   id: string;
   author_id: string;
   category_id: string | null;
+  secondary_category_id: string | null;
   slug: string;
   title: string;
   description: string | null;

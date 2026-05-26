@@ -49,6 +49,7 @@ function parseForm(formData: FormData) {
   const description = String(formData.get('description') ?? '').trim();
   const coverImageUrl = String(formData.get('cover_image_url') ?? '').trim();
   const categoryId = String(formData.get('category_id') ?? '').trim();
+  const secondaryCategoryId = String(formData.get('secondary_category_id') ?? '').trim();
   const statusRaw = String(formData.get('status') ?? '').trim();
   const isPublished = formData.get('is_published') != null;
   const authorIdRaw = String(formData.get('author_id') ?? '').trim();
@@ -58,6 +59,11 @@ function parseForm(formData: FormData) {
 
   const slug = slugRaw ? slugify(slugRaw) : slugify(title);
   if (!slug) fieldErrors.slug = '别名不能为空（请使用字母、数字或中文）。';
+
+  if (!categoryId) fieldErrors.category_id = '请选择主分类。';
+  if (secondaryCategoryId && secondaryCategoryId === categoryId) {
+    fieldErrors.secondary_category_id = '副分类不能与主分类相同。';
+  }
 
   const status = (NOVEL_SERIAL_STATUSES as readonly string[]).includes(statusRaw)
     ? (statusRaw as NovelSerialStatus)
@@ -69,6 +75,7 @@ function parseForm(formData: FormData) {
     description: description || null,
     coverImageUrl: coverImageUrl || null,
     categoryId: categoryId || null,
+    secondaryCategoryId: secondaryCategoryId || null,
     status,
     isPublished,
     authorIdRaw: authorIdRaw || null,
@@ -104,6 +111,7 @@ export async function createNovelAction(
   const { error } = await supabase.from('novels').insert({
     author_id: authorId,
     category_id: f.categoryId,
+    secondary_category_id: f.secondaryCategoryId,
     slug: f.slug,
     title: f.title,
     description: f.description,
@@ -131,13 +139,14 @@ export async function updateNovelAction(
   const role = session.profile.role as Role;
 
   const f = parseForm(formData);
-  if (Object.keys(f.fieldErrors).length && !(role !== 'author' && f.fieldErrors.author_id)) {
-    // title/slug errors always block
-    if (f.fieldErrors.title || f.fieldErrors.slug) return { fieldErrors: f.fieldErrors };
+  // title/slug/category errors always block (author_id only matters on create).
+  if (f.fieldErrors.title || f.fieldErrors.slug || f.fieldErrors.category_id || f.fieldErrors.secondary_category_id) {
+    return { fieldErrors: f.fieldErrors };
   }
 
   const update: Record<string, unknown> = {
     category_id: f.categoryId,
+    secondary_category_id: f.secondaryCategoryId,
     slug: f.slug,
     title: f.title,
     description: f.description,

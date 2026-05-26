@@ -30,6 +30,7 @@ export function PosterCard({ novel }: { novel: NovelListItem }) {
       <p className="truncate text-xs text-stone-500">
         {novel.authors?.pen_name ?? '佚名'}
         {novel.categories?.name ? ` · ${novel.categories.name}` : ''}
+        {novel.secondaryCategory?.name ? ` / ${novel.secondaryCategory.name}` : ''}
       </p>
     </Link>
   );

@@ -55,10 +55,38 @@ export type NovelListItem = {
   updated_at: string;
   authors: { pen_name: string; slug: string | null } | null;
   categories: { name: string; slug: string } | null;
+  // Phase 6m: optional secondary category (resolved in code; no FK embed).
+  secondary_category_id?: string | null;
+  secondaryCategory?: { name: string; slug: string } | null;
 };
 
 const NOVEL_LIST_SELECT =
-  'id, slug, title, description, cover_image_url, status, created_at, updated_at, authors(pen_name, slug), categories(name, slug)';
+  'id, slug, title, description, cover_image_url, status, created_at, updated_at, secondary_category_id, authors(pen_name, slug), categories(name, slug)';
+
+/** Resolve secondary_category_id -> {name, slug} for a set of novel rows (one extra query). */
+async function attachSecondaryCategories(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  rows: NovelListItem[],
+): Promise<NovelListItem[]> {
+  const ids = [...new Set(rows.map((r) => r.secondary_category_id).filter(Boolean))] as string[];
+  if (ids.length === 0) {
+    rows.forEach((r) => {
+      r.secondaryCategory = null;
+    });
+    return rows;
+  }
+  const { data } = await supabase.from('categories').select('id, name, slug').in('id', ids);
+  const map = new Map(
+    ((data ?? []) as { id: string; name: string; slug: string }[]).map((c) => [
+      c.id,
+      { name: c.name, slug: c.slug },
+    ]),
+  );
+  rows.forEach((r) => {
+    r.secondaryCategory = r.secondary_category_id ? (map.get(r.secondary_category_id) ?? null) : null;
+  });
+  return rows;
+}
 
 /** Latest published novels (RLS only returns is_published = true). */
 export async function getLatestNovels(limit = 8): Promise<NovelListItem[]> {
@@ -68,7 +96,7 @@ export async function getLatestNovels(limit = 8): Promise<NovelListItem[]> {
     .select(NOVEL_LIST_SELECT)
     .order('created_at', { ascending: false })
     .limit(limit);
-  return (data ?? []) as unknown as NovelListItem[];
+  return attachSecondaryCategories(supabase, (data ?? []) as unknown as NovelListItem[]);
 }
 
 /** Most-viewed published novels (popularity ranking). */
@@ -80,7 +108,7 @@ export async function getPopularNovels(limit = 8): Promise<NovelListItem[]> {
     .order('view_count', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(limit);
-  return (data ?? []) as unknown as NovelListItem[];
+  return attachSecondaryCategories(supabase, (data ?? []) as unknown as NovelListItem[]);
 }
 
 /** Featured published novels; falls back to latest when none are flagged. */
@@ -93,7 +121,7 @@ export async function getFeaturedNovels(limit = 6): Promise<NovelListItem[]> {
     .order('created_at', { ascending: false })
     .limit(limit);
   const featured = (data ?? []) as unknown as NovelListItem[];
-  if (featured.length > 0) return featured;
+  if (featured.length > 0) return attachSecondaryCategories(supabase, featured);
   return getLatestNovels(limit);
 }
 
@@ -120,7 +148,15 @@ export async function getNovels(options: NovelQueryOptions = {}): Promise<NovelL
 
   if (status) query = query.eq('status', status);
   if (categorySlug) {
-    query = query.eq('categories.slug', categorySlug).not('category_id', 'is', null);
+    // Match novels where the category is EITHER primary or secondary.
+    const { data: cat } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('slug', categorySlug)
+      .maybeSingle();
+    const catId = (cat as { id: string } | null)?.id;
+    if (!catId) return [];
+    query = query.or(`category_id.eq.${catId},secondary_category_id.eq.${catId}`);
   }
 
   if (sort === 'title') query = query.order('title', { ascending: true });
@@ -129,10 +165,7 @@ export async function getNovels(options: NovelQueryOptions = {}): Promise<NovelL
   else query = query.order('updated_at', { ascending: false });
 
   const { data } = await query;
-  let rows = (data ?? []) as unknown as NovelListItem[];
-
-  // The embedded category filter only nulls the relation; keep matched rows.
-  if (categorySlug) rows = rows.filter((r) => r.categories?.slug === categorySlug);
+  let rows = await attachSecondaryCategories(supabase, (data ?? []) as unknown as NovelListItem[]);
 
   const needle = q?.trim().toLowerCase();
   if (needle) {
@@ -141,7 +174,8 @@ export async function getNovels(options: NovelQueryOptions = {}): Promise<NovelL
         r.title.toLowerCase().includes(needle) ||
         (r.description ?? '').toLowerCase().includes(needle) ||
         (r.authors?.pen_name ?? '').toLowerCase().includes(needle) ||
-        (r.categories?.name ?? '').toLowerCase().includes(needle),
+        (r.categories?.name ?? '').toLowerCase().includes(needle) ||
+        (r.secondaryCategory?.name ?? '').toLowerCase().includes(needle),
     );
   }
 
@@ -532,7 +566,9 @@ export async function getNovelBySlug(slug: string): Promise<NovelDetail | null> 
     .select(NOVEL_LIST_SELECT)
     .eq('slug', decodeSlug(slug))
     .maybeSingle();
-  return (data as unknown as NovelDetail) ?? null;
+  if (!data) return null;
+  const [row] = await attachSecondaryCategories(supabase, [data as unknown as NovelListItem]);
+  return (row as NovelDetail) ?? null;
 }
 
 export type ChapterListItem = { id: string; chapter_number: number; title: string };

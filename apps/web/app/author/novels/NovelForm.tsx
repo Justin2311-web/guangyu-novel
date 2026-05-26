@@ -17,6 +17,7 @@ export type NovelDefaults = {
   description?: string | null;
   cover_image_url?: string | null;
   category_id?: string | null;
+  secondary_category_id?: string | null;
   status?: string;
 };
 
@@ -42,6 +43,7 @@ export function NovelForm({
   const [slug, setSlug] = useState(defaults?.slug ?? '');
   const [description, setDescription] = useState(defaults?.description ?? '');
   const [categoryId, setCategoryId] = useState(defaults?.category_id ?? '');
+  const [secondaryCategoryId, setSecondaryCategoryId] = useState(defaults?.secondary_category_id ?? '');
   const [status, setStatus] = useState(defaults?.status ?? 'ongoing');
   const [coverUrl, setCoverUrl] = useState(defaults?.cover_image_url ?? '');
   const [imgKey, setImgKey] = useState(0);
@@ -51,6 +53,7 @@ export function NovelForm({
     slug,
     description,
     categoryId,
+    secondaryCategoryId,
     status,
     coverUrl,
   }));
@@ -60,7 +63,7 @@ export function NovelForm({
     if (savedRef.current) return;
     draft.touch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, slug, description, categoryId, status, coverUrl]);
+  }, [title, slug, description, categoryId, secondaryCategoryId, status, coverUrl]);
 
   useEffect(() => {
     function onBeforeUnload(e: BeforeUnloadEvent) {
@@ -79,6 +82,7 @@ export function NovelForm({
     setSlug((d.slug as string) ?? '');
     setDescription((d.description as string) ?? '');
     setCategoryId((d.categoryId as string) ?? '');
+    setSecondaryCategoryId((d.secondaryCategoryId as string) ?? '');
     setStatus((d.status as string) ?? 'ongoing');
     setCoverUrl((d.coverUrl as string) ?? '');
     setImgKey((k) => k + 1);
@@ -125,17 +129,47 @@ export function NovelForm({
         {fe.slug && <span className="mt-1 block text-sm text-red-600">{fe.slug}</span>}
       </label>
 
-      <label className="block">
-        <span className="text-sm text-stone-600">分类</span>
-        <select name="category_id" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className={inputClass}>
-          <option value="">— 未分类 —</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm text-stone-600">主分类 *</span>
+          <select
+            name="category_id"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">— 请选择 —</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          {fe.category_id && <span className="mt-1 block text-sm text-red-600">{fe.category_id}</span>}
+        </label>
+        <label className="block">
+          <span className="text-sm text-stone-600">副分类（可选）</span>
+          <select
+            name="secondary_category_id"
+            value={secondaryCategoryId}
+            onChange={(e) => setSecondaryCategoryId(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">— 无 —</option>
+            {categories
+              .filter((c) => c.id !== categoryId)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </select>
+          {fe.secondary_category_id && (
+            <span className="mt-1 block text-sm text-red-600">{fe.secondary_category_id}</span>
+          )}
+        </label>
+      </div>
+      <p className="-mt-2 text-xs text-stone-400">最多选择 2 个分类，主分类必填，副分类不能与主分类相同。</p>
 
       <ImageUploadField
         key={imgKey}

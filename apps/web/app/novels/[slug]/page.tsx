@@ -143,6 +143,14 @@ export default async function NovelDetailPage({
               ) : (
                 <span className="rounded bg-stone-100 px-2 py-0.5 text-xs text-stone-500">未分类</span>
               )}
+              {novel.secondaryCategory && (
+                <Link
+                  href={`/novels?category=${encodeURIComponent(novel.secondaryCategory.slug)}`}
+                  className="rounded bg-amber-50 px-2 py-0.5 text-xs text-brand-dark hover:bg-amber-100"
+                >
+                  {novel.secondaryCategory.name}
+                </Link>
+              )}
               <span className="rounded bg-stone-100 px-2 py-0.5 text-xs text-stone-600">
                 {NOVEL_SERIAL_STATUS_LABELS[novel.status]}
               </span>
