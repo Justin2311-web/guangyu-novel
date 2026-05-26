@@ -12,6 +12,7 @@ const NAV: NavItem[] = [
   { href: '/review/chapters', label: '审核 · 章节', roles: ['superadmin', 'admin'] },
   { href: '/authors', label: '作者申请', roles: ['superadmin', 'admin'] },
   { href: '/comments', label: '评论管理', roles: ['superadmin', 'admin'] },
+  { href: '/media', label: '媒体库', roles: ['superadmin', 'admin'] },
   { href: '/categories', label: '分类', roles: ['superadmin', 'admin'] },
   { href: '/banners', label: '横幅', roles: ['superadmin', 'admin'] },
   { href: '/users', label: '用户', roles: ['superadmin'] },
