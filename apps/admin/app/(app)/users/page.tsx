@@ -4,6 +4,7 @@ import { ROLES, USER_ROLE_LABELS, type Role } from '@guangyu/database';
 import { RoleSelect } from './RoleSelect';
 import { SuspendButton } from './SuspendButton';
 import { DeleteRestoreButton } from './DeleteRestoreButton';
+import { SendResetButton } from './SendResetButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +71,11 @@ export default async function AdminUsersPage({
         <h1 className="text-2xl font-semibold">用户管理</h1>
         <p className="text-sm text-stone-500">查看与管理所有用户（仅超级管理员）。</p>
       </header>
+
+      <div className="rounded-md border border-stone-200 bg-stone-50 px-4 py-3 text-xs text-stone-500">
+        修改用户角色不会更改其密码：用户仍使用原密码登录，或通过「发送重置邮件」/前台「忘记密码」重置。
+        系统不创建账号、不显示或修改密码（需邀请新用户时，请让对方在前台注册后于此处调整角色）。
+      </div>
 
       <form method="get" className="flex flex-wrap items-end gap-3">
         <label className="block">
@@ -195,6 +201,7 @@ export default async function AdminUsersPage({
                         deleted={isDeleted}
                         disabled={isSelf}
                       />
+                      {!isDeleted && <SendResetButton email={u.email} />}
                     </div>
                   </td>
                 </tr>
