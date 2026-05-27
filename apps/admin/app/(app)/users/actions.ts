@@ -182,3 +182,24 @@ export async function restoreUserAction(id: string): Promise<UserActionResult> {
   revalidatePath('/users');
   return { ok: true };
 }
+
+const READER_URL = process.env.NEXT_PUBLIC_READER_URL ?? 'https://guangyu-reader.vercel.app';
+
+/**
+ * Send a Supabase password-reset email to a user (superadmin only). Uses the
+ * public resetPasswordForEmail flow — no service role required, no password is
+ * created or revealed. The link lands on the Reader /reset-password page.
+ */
+export async function sendPasswordResetAction(email: string): Promise<UserActionResult> {
+  const { error } = await requireSuperadmin();
+  if (error) return { ok: false, error };
+  const target = email.trim();
+  if (!target) return { ok: false, error: '邮箱无效。' };
+
+  const supabase = await createSupabaseServerClient();
+  const { error: e } = await supabase.auth.resetPasswordForEmail(target, {
+    redirectTo: `${READER_URL}/reset-password`,
+  });
+  if (e) return { ok: false, error: `发送失败：${e.message}` };
+  return { ok: true };
+}
