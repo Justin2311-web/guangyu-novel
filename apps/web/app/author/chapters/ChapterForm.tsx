@@ -30,6 +30,21 @@ function isVisuallyEmpty(html: string): boolean {
   return text.length === 0;
 }
 
+/**
+ * Lightweight client-side sanitize for the preview pane only. Strips script /
+ * style / iframe / object / embed tags, any `on*` event handlers, and
+ * javascript: URLs. The canonical server-side sanitize (apps/web/lib/
+ * chapter-content.ts) runs on submit before persisting.
+ */
+function sanitizeForPreview(html: string): string {
+  return html
+    .replace(/<\s*\/?\s*(script|style|iframe|object|embed|link|meta)\b[^>]*>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
+    .replace(/(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi, '');
+}
+
 export function ChapterForm({
   action,
   novels,
@@ -55,6 +70,8 @@ export function ChapterForm({
   const [content, setContent] = useState(defaults?.content ?? '');
   const [editorKey, setEditorKey] = useState(0);
   const [clientError, setClientError] = useState<string>();
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const [submitIntent, setSubmitIntent] = useState<'draft' | 'submit' | null>(null);
 
   const draft = useAutosaveDraft(draftKey, () => ({ novelId, chapterNumber, title, content }));
   const savedRef = useRef(false);
@@ -90,10 +107,32 @@ export function ChapterForm({
   }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    // Pre-flight client validation. Server still re-validates everything.
+    if (!novelId) {
+      e.preventDefault();
+      setClientError('请选择所属小说。');
+      return;
+    }
+    if (!title.trim()) {
+      e.preventDefault();
+      setClientError('请填写标题。');
+      return;
+    }
     if (isVisuallyEmpty(content)) {
       e.preventDefault();
       setClientError('正文不能为空。');
       return;
+    }
+    // Confirmation gate for "submit for review" — drafts skip the prompt.
+    if (submitIntent === 'submit') {
+      const ok = window.confirm(
+        '确认提交本章节进入审核流程？提交后将由管理员审核，审核通过即对读者公开。'
+      );
+      if (!ok) {
+        e.preventDefault();
+        setSubmitIntent(null);
+        return;
+      }
     }
     setClientError(undefined);
     // Optimistically clear the local draft + disable the unload guard. If the
@@ -195,15 +234,58 @@ export function ChapterForm({
       </label>
 
       <div className="block">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-stone-600">正文 *</span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-stone-600">正文 *</span>
+            <div role="tablist" aria-label="正文视图切换" className="flex rounded-md border border-stone-300 bg-white text-xs">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'edit'}
+                onClick={() => setMode('edit')}
+                className={`rounded-l-md px-3 py-1 ${mode === 'edit' ? 'bg-brand text-white' : 'text-stone-600 hover:text-brand'}`}
+              >
+                编辑
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'preview'}
+                onClick={() => setMode('preview')}
+                className={`rounded-r-md px-3 py-1 ${mode === 'preview' ? 'bg-brand text-white' : 'text-stone-600 hover:text-brand'}`}
+              >
+                预览
+              </button>
+            </div>
+          </div>
           <span className="text-xs text-stone-400">
             {chars} 字 · 约 {readMins} 分钟阅读 · {statusText}
           </span>
         </div>
-        <div className="mt-1">
+        {/* Keep editor mounted to preserve cursor / autosave state; just hide it. */}
+        <div className={`mt-1 ${mode === 'edit' ? '' : 'hidden'}`}>
           <RichTextEditor key={editorKey} name="content" defaultValue={content} onChange={setContent} />
         </div>
+        {mode === 'preview' && (
+          <div className="mt-1 rounded-md border border-stone-200 bg-white">
+            <div className="border-b border-stone-100 bg-stone-50 px-3 py-1.5 text-[11px] text-stone-400">
+              预览：以下为读者将看到的渲染效果（提交时会再次净化）。
+            </div>
+            <div className="px-4 py-5 sm:px-6 sm:py-7">
+              <h3 className="mb-3 font-serif text-xl font-semibold text-stone-800">
+                {title.trim() || '（未填写标题）'}
+              </h3>
+              {isVisuallyEmpty(content) ? (
+                <p className="text-sm text-stone-400">正文为空，无内容可预览。</p>
+              ) : (
+                <div
+                  className="gy-chapter-content font-serif text-[16px] leading-8 text-stone-800"
+                  dangerouslySetInnerHTML={{ __html: sanitizeForPreview(content) }}
+                />
+              )}
+            </div>
+          </div>
+        )}
         {fe.content && <span className="mt-1 block text-sm text-red-600">{fe.content}</span>}
       </div>
 
@@ -216,6 +298,7 @@ export function ChapterForm({
           type="submit"
           name="intent"
           value="draft"
+          onClick={() => setSubmitIntent('draft')}
           disabled={pending}
           className="rounded-md border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 hover:border-brand hover:text-brand disabled:opacity-60"
         >
@@ -225,6 +308,7 @@ export function ChapterForm({
           type="submit"
           name="intent"
           value="submit"
+          onClick={() => setSubmitIntent('submit')}
           disabled={pending}
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-60"
         >
