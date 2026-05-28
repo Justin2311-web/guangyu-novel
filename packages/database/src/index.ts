@@ -159,6 +159,46 @@ export const COMMENT_STATUS_LABELS: Record<CommentStatus, string> = {
 export const COMMENT_MIN_LENGTH = 2;
 export const COMMENT_MAX_LENGTH = 500;
 
+// Phase 6u — comment reports
+export type CommentReportReason =
+  | 'spam'
+  | 'harassment'
+  | 'sexual'
+  | 'spoiler'
+  | 'other';
+
+export const COMMENT_REPORT_REASONS: readonly CommentReportReason[] = [
+  'spam',
+  'harassment',
+  'sexual',
+  'spoiler',
+  'other',
+] as const;
+
+export const COMMENT_REPORT_REASON_LABELS: Record<CommentReportReason, string> = {
+  spam: '垃圾广告',
+  harassment: '人身攻击',
+  sexual: '色情低俗',
+  spoiler: '剧透骚扰',
+  other: '其他',
+};
+
+export type CommentReportStatus = 'open' | 'resolved' | 'dismissed';
+
+export const COMMENT_REPORT_STATUSES: readonly CommentReportStatus[] = [
+  'open',
+  'resolved',
+  'dismissed',
+] as const;
+
+export const COMMENT_REPORT_STATUS_LABELS: Record<CommentReportStatus, string> = {
+  open: '待处理',
+  resolved: '已处理',
+  dismissed: '已忽略',
+};
+
+export const COMMENT_REPORT_DETAILS_MAX = 300;
+
 export interface Comment {
   id: string;
   novel_id: string;

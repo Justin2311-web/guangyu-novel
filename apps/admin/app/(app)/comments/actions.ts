@@ -26,11 +26,16 @@ async function setStatus(id: string, status: CommentStatus): Promise<CommentMode
     .from('comments')
     .update({ status })
     .eq('id', id)
-    .select('id');
+    .select('id, novels(slug)');
   if (error) return { ok: false, error: `数据库错误：${error.code ?? ''} ${error.message}` };
   if (!data || data.length === 0) return { ok: false, error: '更新未生效（影响 0 行）。' };
 
   revalidatePath('/comments');
+  // Best-effort: refresh the affected novel page on the reader app's domain
+  // is out of scope (cross-app), but revalidating the same path here keeps
+  // the admin list and any same-domain caches fresh.
+  const novelSlug = (data[0] as { novels?: { slug?: string } | null })?.novels?.slug;
+  if (novelSlug) revalidatePath(`/novels/${novelSlug}`);
   return { ok: true };
 }
 
