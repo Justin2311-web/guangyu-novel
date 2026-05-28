@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { COMMENT_MAX_LENGTH, COMMENT_MIN_LENGTH } from '@guangyu/database';
 import type { NovelComment } from '@/lib/queries';
 import { postCommentAction, deleteCommentAction } from './comment-actions';
+import { ReportCommentButton } from './ReportCommentButton';
 
 /** Returns a short, localized relative timestamp; falls back to YYYY-MM-DD for older dates. */
 function formatRelative(iso: string, now: number = Date.now()): string {
@@ -172,18 +173,22 @@ export function CommentSection({
               <p className="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-stone-700">
                 {c.content}
               </p>
-              {currentUserId === c.userId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm('确认删除这条评论？')) remove(c.id);
-                  }}
-                  disabled={pending}
-                  className="mt-1 text-xs text-stone-400 hover:text-red-600 disabled:opacity-50"
-                >
-                  删除
-                </button>
-              )}
+              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                {currentUserId === c.userId ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm('确认删除这条评论？')) remove(c.id);
+                    }}
+                    disabled={pending}
+                    className="text-xs text-stone-400 hover:text-red-600 disabled:opacity-50"
+                  >
+                    删除
+                  </button>
+                ) : (
+                  <ReportCommentButton commentId={c.id} isLoggedIn={isLoggedIn} />
+                )}
+              </div>
             </li>
           ))}
         </ul>
