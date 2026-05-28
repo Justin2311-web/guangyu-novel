@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { getCurrentUser } from '@/lib/supabase/server';
 import { getNovelBySlug, getPublishedChapters, getChapterContent } from '@/lib/queries';
 import { RecordReading } from './RecordReading';
+import { RecordLocalProgress } from './RecordLocalProgress';
 import { ChapterReader } from './ChapterReader';
 import { SITE_NAME, clampText } from '@/lib/site';
 import { sanitizeChapterHtml, chapterPlainText, looksLikeHtml } from '@/lib/chapter-content';
@@ -80,6 +81,8 @@ export default async function ChapterReaderPage({
   return (
     <div className="mx-auto max-w-2xl">
       {session && <RecordReading novelId={novel.id} chapterId={current.id} />}
+      {/* Anonymous-safe local progress, scoped by novel slug; always mounted. */}
+      <RecordLocalProgress novelSlug={novel.slug} chapterNumber={current.chapter_number} />
 
       <nav className="mb-6 text-sm text-stone-500">
         <Link href="/novels" className="hover:text-brand">书库</Link>
