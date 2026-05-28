@@ -13,6 +13,7 @@ import {
   isBookmarked,
 } from '@/lib/queries';
 import { BookmarkButton } from './BookmarkButton';
+import { LocalContinueButton } from './LocalContinueButton';
 import { CommentSection } from './CommentSection';
 import { ShareButtons } from './ShareButtons';
 import { SectionHeader } from '../../components/SectionHeader';
@@ -180,9 +181,19 @@ export default async function NovelDetailPage({
                     </Link>
                   </>
                 ) : (
-                  <Link href={`/novels/${novel.slug}/${firstChapter.chapter_number}`} className="gy-btn-primary">
-                    开始阅读
-                  </Link>
+                  <>
+                    {/* Anonymous / non-DB local progress, when available, replaces "开始阅读". */}
+                    <LocalContinueButton
+                      novelSlug={novel.slug}
+                      maxChapterNumber={chapters[chapters.length - 1]?.chapter_number ?? firstChapter.chapter_number}
+                    />
+                    <Link
+                      href={`/novels/${novel.slug}/${firstChapter.chapter_number}`}
+                      className="gy-btn-primary"
+                    >
+                      开始阅读
+                    </Link>
+                  </>
                 )
               ) : (
                 <button type="button" disabled className="gy-btn-ghost cursor-not-allowed opacity-60">
@@ -223,7 +234,12 @@ export default async function NovelDetailPage({
                   className="flex items-baseline gap-3 px-4 py-3 text-sm hover:bg-amber-50/60"
                 >
                   <span className="shrink-0 text-stone-400">第 {c.chapter_number} 章</span>
-                  <span className="truncate text-stone-800">{c.title}</span>
+                  <span className="min-w-0 flex-1 truncate text-stone-800">{c.title}</span>
+                  {c.date && (
+                    <span className="shrink-0 text-xs text-stone-400">
+                      {c.date.slice(0, 10)}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

@@ -571,18 +571,36 @@ export async function getNovelBySlug(slug: string): Promise<NovelDetail | null> 
   return (row as NovelDetail) ?? null;
 }
 
-export type ChapterListItem = { id: string; chapter_number: number; title: string };
+export type ChapterListItem = {
+  id: string;
+  chapter_number: number;
+  title: string;
+  /** Date string (ISO) — `published_at` if set, otherwise `updated_at`. May be null on legacy rows. */
+  date: string | null;
+};
 
 /** Published chapters of a novel, ascending. RLS also gates on the parent novel being published. */
 export async function getPublishedChapters(novelId: string): Promise<ChapterListItem[]> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from('chapters')
-    .select('id, chapter_number, title')
+    .select('id, chapter_number, title, published_at, updated_at')
     .eq('novel_id', novelId)
     .eq('status', 'published')
     .order('chapter_number', { ascending: true });
-  return (data ?? []) as ChapterListItem[];
+  type Row = {
+    id: string;
+    chapter_number: number;
+    title: string;
+    published_at: string | null;
+    updated_at: string | null;
+  };
+  return ((data ?? []) as Row[]).map((r) => ({
+    id: r.id,
+    chapter_number: r.chapter_number,
+    title: r.title,
+    date: r.published_at ?? r.updated_at ?? null,
+  }));
 }
 
 export type ChapterContent = ChapterListItem & { content: string };
