@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { getCurrentUser } from '@/lib/supabase/server';
 import { getSiteSettings } from '@/lib/queries';
 import { getUnreadNotificationCount } from '@/lib/notifications';
 import { SITE_URL, SITE_NAME, DEFAULT_TITLE, DEFAULT_DESCRIPTION } from '@/lib/site';
+import { SiteHeader } from './components/SiteHeader';
 import './globals.css';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -58,70 +58,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const isStaff = ['author', 'admin', 'superadmin'].includes(session?.profile?.role ?? '');
   const unreadCount = session ? await getUnreadNotificationCount() : 0;
 
+  const displayName = session?.profile?.display_name ?? session?.user.email ?? null;
+
   return (
     <html lang="zh-CN">
       <body>
-        <header className="sticky top-0 z-30 border-b border-amber-100 bg-white/90 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-brand">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt={siteName} className="h-8 w-auto object-contain" />
-              ) : (
-                <>
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-dark font-serif text-white">
-                    羽
-                  </span>
-                  <span className="font-serif">{siteName}</span>
-                </>
-              )}
-            </Link>
-            <nav className="flex flex-1 flex-wrap items-center gap-4 text-sm text-stone-600 sm:gap-6">
-              <Link href="/" className="hover:text-brand">首页</Link>
-              <Link href="/novels" className="hover:text-brand">小说</Link>
-              <Link href="/rankings" className="hover:text-brand">排行榜</Link>
-              <Link href="/categories" className="hover:text-brand">分类</Link>
-              <Link href="/authors" className="hover:text-brand">作者</Link>
-              {isStaff && (
-                <Link href="/author/dashboard" className="hover:text-brand">作者中心</Link>
-              )}
-              <Link href="/bookshelf" className="hover:text-brand">我的书架</Link>
-              <Link href="/account" className="hover:text-brand">我的账户</Link>
-            </nav>
-            <div className="flex items-center gap-3 text-sm">
-              {session ? (
-                <>
-                  <Link
-                    href="/notifications"
-                    aria-label="通知"
-                    className="relative text-stone-500 hover:text-brand"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.8 23.8 0 0 0 5.454-1.31A8.97 8.97 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.97 8.97 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m6.714 0a3 3 0 1 1-6.714 0m6.714 0a23.9 23.9 0 0 1-6.714 0" />
-                    </svg>
-                    {unreadCount > 0 && (
-                      <span className="absolute -right-2 -top-1.5 min-w-[16px] rounded-full bg-brand px-1 text-center text-[10px] font-medium leading-4 text-white">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                  <span className="hidden text-stone-500 sm:inline">
-                    {session.profile?.display_name ?? session.user.email}
-                  </span>
-                  <form action="/logout" method="post">
-                    <button className="text-stone-500 hover:text-brand" type="submit">登出</button>
-                  </form>
-                </>
-              ) : (
-                <>
-                  <Link href="/login" className="text-stone-600 hover:text-brand">登录</Link>
-                  <Link href="/register" className="gy-btn-primary !px-3 !py-1.5">注册</Link>
-                </>
-              )}
-            </div>
-          </div>
-        </header>
-        <main className="mx-auto min-h-[calc(100vh-8rem)] max-w-6xl px-4 py-8">{children}</main>
+        <SiteHeader
+          siteName={siteName}
+          logoUrl={logoUrl ?? null}
+          isAuthenticated={!!session}
+          isStaff={isStaff}
+          displayName={displayName}
+          unreadCount={unreadCount}
+        />
+        <main className="mx-auto min-h-[calc(100vh-8rem)] w-full max-w-6xl px-4 py-8">{children}</main>
         <footer className="border-t border-stone-200 bg-white">
           <div className="mx-auto max-w-6xl space-y-4 px-4 py-8 text-sm text-stone-500">
             {settings['footer.about'] && (
