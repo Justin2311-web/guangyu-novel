@@ -63,18 +63,29 @@ function FeaturedHero({ novel }: { novel: NovelListItem }) {
 }
 
 export default async function HomePage() {
-  const [banners, categories, featured, latest, popular, newBooks, topAuthors, settings, session] =
-    await Promise.all([
-      getActiveBanners(),
-      getCategories(),
-      getFeaturedNovels(6),
-      getLatestUpdatedNovels(6),
-      getPopularNovels(8),
-      getRanking('new', 6),
-      getTopAuthors(6),
-      getSiteSettings(),
-      getCurrentUser(),
-    ]);
+  const [
+    banners,
+    categories,
+    featured,
+    latest,
+    popular,
+    newBooks,
+    finished,
+    topAuthors,
+    settings,
+    session,
+  ] = await Promise.all([
+    getActiveBanners(),
+    getCategories(),
+    getFeaturedNovels(6),
+    getLatestUpdatedNovels(6),
+    getPopularNovels(8),
+    getRanking('new', 6),
+    getRanking('finished', 6),
+    getTopAuthors(6),
+    getSiteSettings(),
+    getCurrentUser(),
+  ]);
   const recentlyRead = session ? await getReadingList(4) : [];
 
   return (
@@ -154,13 +165,13 @@ export default async function HomePage() {
         <CategoryGrid categories={categories} />
       </section>
 
-      {/* Recommended */}
+      {/* 精选推荐 — editorially flagged via novels.featured = true */}
       <section>
-        <SectionHeader title="推荐小说" href="/novels" />
+        <SectionHeader title="精选推荐" href="/novels" more="查看更多" />
         {featured.length === 0 ? (
           <p className="text-sm text-stone-500">暂无推荐作品。</p>
         ) : (
-          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
             {featured.map((n) => (
               <PosterCard key={n.id} novel={n} />
             ))}
@@ -168,11 +179,11 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* New books */}
+      {/* 新书入库 — ordered by created_at via getRanking('new') */}
       {newBooks.length > 0 && (
         <section>
-          <SectionHeader title="新书推荐" href="/rankings/new" more="新书榜" />
-          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+          <SectionHeader title="新书入库" href="/rankings/new" more="查看新书榜" />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
             {newBooks.map((n) => (
               <PosterCard key={n.id} novel={n} />
             ))}
@@ -180,7 +191,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Latest + Popular ranking */}
+      {/* 最新更新 + 人气作品 (real updated_at on published chapters; real view_count). */}
       <div className="grid gap-8 lg:grid-cols-3">
         <section className="lg:col-span-2">
           <SectionHeader title="最新更新" href="/novels?sort=updated" more="进入书库" />
@@ -195,10 +206,22 @@ export default async function HomePage() {
           )}
         </section>
         <section>
-          <SectionHeader title="人气排行榜" />
+          <SectionHeader title="人气作品" href="/rankings/popular" more="查看人气榜" />
           <RankList novels={popular} />
         </section>
       </div>
+
+      {/* 完结佳作 — status = 'completed', ordered by view_count via getRanking('finished') */}
+      {finished.length > 0 && (
+        <section>
+          <SectionHeader title="完结佳作" href="/rankings/finished" more="查看完结榜" />
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
+            {finished.map((n) => (
+              <PosterCard key={n.id} novel={n} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Hot authors */}
       {topAuthors.length > 0 && (
